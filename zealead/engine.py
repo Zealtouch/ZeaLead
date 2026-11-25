@@ -25,7 +25,7 @@ from .llm import LLM
 from .outreach import draft_for_lead, draft_pending
 from .store import Store
 
-log = logging.getLogger("leadscout")
+log = logging.getLogger("zealead")
 DEBOUNCE = 0.8
 
 
@@ -151,7 +151,7 @@ class Engine:
                 self._finish(cid, "stopped", "token budget spent")
                 return
 
-            # Operator hints written from another process (`leadscout hint`).
+            # Operator hints written from another process (`zealead hint`).
             for h in self.store.nodes(cid, "hint", ["active"]):
                 self._triggers.append({"kind": "hint", "text": h.summary})
                 self.store.set_state(h.id, "consumed")

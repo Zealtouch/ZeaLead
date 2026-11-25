@@ -1,11 +1,11 @@
 # ./start.sh                        first run: creates .env, builds, starts → http://localhost:8790
 # ./reset-password.sh <username>    set a new password for a console user
-# docker compose logs -f leadscout  follow the server log
+# docker compose logs -f zealead  follow the server log
 services:
-  leadscout:
+  zealead:
     build: .
-    image: leadscout:latest
-    container_name: leadscout
+    image: zealead:latest
+    container_name: zealead
     restart: unless-stopped
     env_file:
       - path: .env
@@ -13,17 +13,17 @@ services:
     # Pinned here so values in .env (meant for running without Docker) can't move the
     # database or the listener inside the container.
     environment:
-      LEADSCOUT_DB: /app/data/leadscout.db
-      LEADSCOUT_KEYS_DIR: /app/keys
-      LEADSCOUT_BIND_ADDR: 0.0.0.0
-      LEADSCOUT_PORT: "8790"
+      ZEALEAD_DB: /app/data/zealead.db
+      ZEALEAD_KEYS_DIR: /app/keys
+      ZEALEAD_BIND_ADDR: 0.0.0.0
+      ZEALEAD_PORT: "8790"
     ports:
       # Loopback only by default. To reach it from other machines, put a TLS reverse proxy
-      # in front, or set LEADSCOUT_PUBLISH_ADDR=0.0.0.0 in .env if you accept the risk.
-      - "${LEADSCOUT_PUBLISH_ADDR:-127.0.0.1}:${LEADSCOUT_PUBLISH_PORT:-8790}:8790"
+      # in front, or set ZEALEAD_PUBLISH_ADDR=0.0.0.0 in .env if you accept the risk.
+      - "${ZEALEAD_PUBLISH_ADDR:-127.0.0.1}:${ZEALEAD_PUBLISH_PORT:-8790}:8790"
     volumes:
-      - leadscout-data:/app/data # SQLite: tasks, leads, sessions, users
-      - leadscout-keys:/app/keys # session signing key
+      - zealead-data:/app/data # SQLite: tasks, leads, sessions, users
+      - zealead-keys:/app/keys # session signing key
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -36,5 +36,5 @@ services:
       retries: 3
 
 volumes:
-  leadscout-data:
-  leadscout-keys:
+  zealead-data:
+  zealead-keys:

@@ -224,6 +224,46 @@ CREATE TABLE IF NOT EXISTS tool_calls (
     ts          REAL NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_tool_calls ON tool_calls(campaign_id, id);
+
+-- LLM model profiles (System -> LLM). api_key and custom_headers are AES-GCM ciphertext
+-- under keys/llm.key; they are write-only through the API.
+CREATE TABLE IF NOT EXISTS llm_profiles (
+    id                 INTEGER PRIMARY KEY,
+    name               TEXT NOT NULL,
+    format             TEXT NOT NULL,
+    model              TEXT NOT NULL,
+    base_url           TEXT NOT NULL DEFAULT '',
+    proxy              TEXT NOT NULL DEFAULT '',
+    api_key            TEXT NOT NULL DEFAULT '',
+    api_key_hint       TEXT NOT NULL DEFAULT '',
+    custom_headers     TEXT NOT NULL DEFAULT '',
+    rate_per_second    INTEGER NOT NULL DEFAULT 0,
+    rate_per_minute    INTEGER NOT NULL DEFAULT 0,
+    context_window_k   INTEGER NOT NULL DEFAULT 0,
+    thinking_type      TEXT NOT NULL DEFAULT '',
+    reasoning_effort   TEXT NOT NULL DEFAULT '',
+    priority           INTEGER NOT NULL DEFAULT 0,
+    pool_exclude       INTEGER NOT NULL DEFAULT 0,
+    streaming          INTEGER NOT NULL DEFAULT 1,
+    max_tokens         INTEGER NOT NULL DEFAULT 0,
+    max_tokens_field   TEXT NOT NULL DEFAULT '',
+    session_header_key TEXT NOT NULL DEFAULT '',
+    user_agent         TEXT NOT NULL DEFAULT '',
+    retry              TEXT NOT NULL DEFAULT '{}',
+    is_default         INTEGER NOT NULL DEFAULT 0,
+    created_at         REAL NOT NULL,
+    updated_at         REAL NOT NULL
+);
+
+-- Pool breaker state per profile, persisted so a tripped profile stays tripped across restarts.
+CREATE TABLE IF NOT EXISTS llm_health (
+    profile_id INTEGER PRIMARY KEY REFERENCES llm_profiles(id) ON DELETE CASCADE,
+    fails      INTEGER NOT NULL DEFAULT 0,
+    trips      INTEGER NOT NULL DEFAULT 0,
+    open_until REAL NOT NULL DEFAULT 0,
+    last_error TEXT NOT NULL DEFAULT '',
+    updated_at REAL NOT NULL
+);
 """
 
 # Additive migrations for databases created by earlier versions.
@@ -359,6 +399,53 @@ class Store:
                       "runs", "tool_calls"):
                 self._db.execute(f"DELETE FROM {t} WHERE campaign_id=?", (cid,))
             self._db.execute("DELETE FROM campaigns WHERE id=?", (cid,))
+
+    # ---------- LLM profiles ----------
+    PROFILE_COLS = ("name", "format", "model", "base_url", "proxy", "api_key", "api_key_hint", "custom_headers",
+                    "rate_per_second", "rate_per_minute", "context_window_k", "thinking_type", "reasoning_effort",
+                    "priority", "pool_exclude", "streaming", "max_tokens", "max_tokens_field", "session_header_key",
+                    "user_agent", "retry")
+
+    def llm_profiles(self) -> list[dict]:
+        return [dict(r) for r in self._q("SELECT * FROM llm_profiles ORDER BY is_default DESC, priority DESC, id")]
+
+    def llm_profile(self, pid: int) -> dict | None:
+        r = self._q("SELECT * FROM llm_profiles WHERE id=?", (pid,))
+        return dict(r[0]) if r else None
+
+    def save_llm_profile(self, pid: int | None, fields: dict) -> int:
+        cols = [c for c in self.PROFILE_COLS if c in fields]
+        now = _now()
+        if pid:
+            sets = ", ".join(f"{c}=?" for c in cols)
+            self._x(f"UPDATE llm_profiles SET {sets}, updated_at=? WHERE id=?", [fields[c] for c in cols] + [now, pid])
+            return pid
+        names = ", ".join(cols)
+        marks = ",".join("?" for _ in cols)
+        return self._x(f"INSERT INTO llm_profiles({names}, created_at, updated_at) VALUES ({marks},?,?)",
+                       [fields[c] for c in cols] + [now, now])
+
+    def delete_llm_profile(self, pid: int) -> None:
+        self._x("DELETE FROM llm_profiles WHERE id=?", (pid,))
+
+    def activate_llm_profile(self, pid: int) -> None:
+        with self._lock:
+            self._db.execute("UPDATE llm_profiles SET is_default = (id = ?)", (pid,))
+
+    def llm_health(self) -> dict[int, dict]:
+        return {r["profile_id"]: dict(r) for r in self._q("SELECT * FROM llm_health")}
+
+    def put_llm_health(self, pid: int, fails: int, trips: int, open_until: float, last_error: str) -> None:
+        self._x("INSERT INTO llm_health(profile_id, fails, trips, open_until, last_error, updated_at) VALUES (?,?,?,?,?,?)"
+                " ON CONFLICT(profile_id) DO UPDATE SET fails=excluded.fails, trips=excluded.trips,"
+                " open_until=excluded.open_until, last_error=excluded.last_error, updated_at=excluded.updated_at",
+                (pid, fails, trips, open_until, last_error[:500], _now()))
+
+    def clear_llm_health(self, pid: int | None = None) -> None:
+        if pid is None:
+            self._x("DELETE FROM llm_health")
+        else:
+            self._x("DELETE FROM llm_health WHERE profile_id=?", (pid,))
 
     # ---------- settings (non-secret overrides; secrets stay in the environment) ----------
     def get_settings(self) -> dict[str, str]:

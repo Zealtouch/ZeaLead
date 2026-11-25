@@ -45,11 +45,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: docker build -t leadscout:ci .
-      - run: docker run --rm leadscout:ci leadscout --version
+      - run: docker build -t zealead:ci .
+      - run: docker run --rm zealead:ci zealead --version
       - name: console is bundled and served
         run: |
-          docker run -d --name ls -p 8790:8790 leadscout:ci
+          docker run -d --name ls -p 8790:8790 zealead:ci
           for i in $(seq 1 20); do curl -fsS http://127.0.0.1:8790/api/health && break; sleep 1; done
           curl -fsS http://127.0.0.1:8790/login/ | grep -q '<html'
           docker rm -f ls

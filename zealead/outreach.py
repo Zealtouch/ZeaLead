@@ -7,7 +7,7 @@ saves: length limits, the product named (transparent affiliation), no links
 except the product's own site, and no near-copy of a message already written for
 another lead, so every person gets a message about what they said.
 
-leadscout never sends anything: these are drafts for a person to post.
+ZeaLead never sends anything: these are drafts for a person to post.
 """
 
 from __future__ import annotations

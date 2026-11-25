@@ -25,7 +25,7 @@ export type FieldSpec = {
   min?: number;
 };
 
-// SettingsForm edits a group of console-editable settings (leadscout/config.py EDITABLE).
+// SettingsForm edits a group of console-editable settings (zealead/config.py EDITABLE).
 // Overrides live in the database and apply to tasks started afterwards; clearing a field
 // falls back to the environment value. Members see the values read-only.
 export function SettingsForm({

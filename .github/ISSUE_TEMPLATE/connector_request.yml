@@ -20,7 +20,7 @@ body:
     id: api
     attributes:
       label: Official API or search access
-      description: Link the official API docs and say whether it needs a key or a paid tier. leadscout only uses official APIs or search engines. It does not scrape platforms whose terms forbid it.
+      description: Link the official API docs and say whether it needs a key or a paid tier. ZeaLead only uses official APIs or search engines. It does not scrape platforms whose terms forbid it.
     validations:
       required: true
   - type: checkboxes

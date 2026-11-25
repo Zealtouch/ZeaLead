@@ -15,7 +15,7 @@ tests
 leads-report.html
 keys
 data
-leadscout/webui
+zealead/webui
 web/node_modules
 web/.next
 web/out

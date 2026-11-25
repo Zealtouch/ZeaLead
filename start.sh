@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# leadscout — build and start the console with Docker.
+# ZeaLead — build and start the console with Docker.
 #
 #   ./start.sh            build (first time / after an update) and start in the background
 #   ./start.sh --no-build start without rebuilding
@@ -31,19 +31,19 @@ fi
 build=(--build)
 [ "${1:-}" = "--no-build" ] && build=()
 
-info "starting leadscout…"
+info "starting ZeaLead…"
 docker compose up -d "${build[@]}"
 
-port="$(grep -E '^LEADSCOUT_PUBLISH_PORT=' .env 2>/dev/null | cut -d= -f2 || true)"
+port="$(grep -E '^ZEALEAD_PUBLISH_PORT=' .env 2>/dev/null | cut -d= -f2 || true)"
 port="${port:-8790}"
 
 info "waiting for the server…"
 for _ in $(seq 1 30); do
   if curl -fsS "http://127.0.0.1:${port}/api/health" >/dev/null 2>&1; then
-    ok "leadscout is running → http://localhost:${port}"
+    ok "ZeaLead is running → http://localhost:${port}"
     ok "first visit: create the admin account on the setup page"
     exit 0
   fi
   sleep 1
 done
-warn "the server didn't answer yet — check: docker compose logs leadscout"
+warn "the server didn't answer yet — check: docker compose logs zealead"

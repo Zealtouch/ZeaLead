@@ -56,7 +56,7 @@ export interface NavGroup {
   items: NavMainItem[];
 }
 
-// Same two groups as Leadscout: Functions (the work) and System (configuration).
+// Same two groups as ZeaLead: Functions (the work) and System (configuration).
 export const sidebarItems: NavGroup[] = [
   {
     id: 1,

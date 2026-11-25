@@ -1,12 +1,12 @@
 """Console backend: JSON API plus the static Next.js UI, with campaigns running in-process.
 
-Security model (self-hosted, like Leadscout):
+Security model (self-hosted, like ZeaLead):
 - User accounts. On first start the console asks for an admin account (/setup);
   after that every /api route except health, auth status and login needs a
   signed session token. Passwords are scrypt-hashed; the signing key lives in
   the keys directory, apart from the data.
 - Binds to 127.0.0.1 by default. In Docker the published port is bound to
-  127.0.0.1 unless LEADSCOUT_BIND_ADDR says otherwise.
+  127.0.0.1 unless ZEALEAD_BIND_ADDR says otherwise.
 - API keys are never accepted or returned by the API; they live in .env.
 - Collected posts are attacker-written text. The UI renders them as React text
   (escaped), never as HTML, and the CSP forbids loading code from elsewhere.
@@ -44,8 +44,8 @@ from .report import render_html
 from .store import Store
 from .tools import goal_progress, planner_tools, worker_tools
 
-log = logging.getLogger("leadscout.server")
-WEBUI_DIR = Path(os.environ.get("LEADSCOUT_WEBUI_DIR") or Path(__file__).parent / "webui")
+log = logging.getLogger("zealead.server")
+WEBUI_DIR = Path(os.environ.get("ZEALEAD_WEBUI_DIR") or Path(__file__).parent / "webui")
 LEAD_STATUSES = {"new", "contacted", "replied", "won", "dismissed"}
 LEVELS = {"hot", "warm", "cold"}
 CSP = ("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
@@ -167,7 +167,7 @@ def create_app(settings: Settings | None = None, store: Store | None = None) -> 
         yield
         await runner.shutdown()
 
-    app = FastAPI(title="leadscout", version=__version__, docs_url=None, redoc_url=None, openapi_url=None,
+    app = FastAPI(title="ZeaLead", version=__version__, docs_url=None, redoc_url=None, openapi_url=None,
                   lifespan=lifespan)
     app.state.store, app.state.runner = store, runner
 
@@ -534,7 +534,7 @@ def create_app(settings: Settings | None = None, store: Store | None = None) -> 
     def report(cid: int):
         camp_or_404(cid)
         return HTMLResponse(render_html(store, cid), headers={
-            "Content-Disposition": f'attachment; filename="leadscout-task-{cid}-report.html"'})
+            "Content-Disposition": f'attachment; filename="zealead-task-{cid}-report.html"'})
 
     @app.get("/api/nodes/{nid}", dependencies=U)
     def node(nid: int):
@@ -588,7 +588,7 @@ def create_app(settings: Settings | None = None, store: Store | None = None) -> 
         for r in rows:
             w.writerow({k: _csv_safe(v) for k, v in r.items()})
         return Response(buf.getvalue(), media_type="text/csv",
-                        headers={"Content-Disposition": 'attachment; filename="leadscout-leads.csv"'})
+                        headers={"Content-Disposition": 'attachment; filename="zealead-leads.csv"'})
 
     @app.get("/api/leads/{nid}", dependencies=U)
     def get_lead(nid: int):
@@ -694,7 +694,7 @@ def create_app(settings: Settings | None = None, store: Store | None = None) -> 
         llm_ok = bool(settings.env.get("ANTHROPIC_API_KEY") or settings.env.get("ANTHROPIC_AUTH_TOKEN"))
         return {"values": {k: getattr(eff, attr) for k, (attr, _) in EDITABLE.items()},
                 "overrides": store.get_settings(), "anthropic_configured": llm_ok,
-                "fallbacks": os.environ.get("LEADSCOUT_FALLBACKS", "default") != "off"}
+                "fallbacks": os.environ.get("ZEALEAD_FALLBACKS", "default") != "off"}
 
     @app.put("/api/settings", dependencies=ADMIN)
     def put_settings(body: dict[str, Any]):
@@ -778,11 +778,11 @@ def create_app(settings: Settings | None = None, store: Store | None = None) -> 
         @app.get("/")
         def no_ui():
             return HTMLResponse(
-                "<!doctype html><title>leadscout</title><body style='font-family:system-ui;padding:3rem'>"
-                "<h1>leadscout API is running</h1><p>The console UI isn't built into this install. "
+                "<!doctype html><title>ZeaLead</title><body style='font-family:system-ui;padding:3rem'>"
+                "<h1>ZeaLead API is running</h1><p>The console UI isn't built into this install. "
                 "Run it with Docker (<code>./start.sh</code>), or build it: "
                 "<code>cd web &amp;&amp; npm ci &amp;&amp; npm run build:static</code>, "
-                "then copy <code>web/out</code> to <code>leadscout/webui</code>.</p>")
+                "then copy <code>web/out</code> to <code>zealead/webui</code>.</p>")
 
     return app
 
@@ -793,7 +793,7 @@ def serve(host: str = "127.0.0.1", port: int = 8790) -> None:
     store = Store(settings.db_path)
     app = create_app(settings, store)
     shown = "localhost" if host in ("127.0.0.1", "0.0.0.0") else host
-    print("\n  leadscout console")
+    print("\n  ZeaLead console")
     print(f"  ▸ open     http://{shown}:{port}")
     if store.user_count() == 0:
         print("  ▸ first run: open the console to create the admin account")

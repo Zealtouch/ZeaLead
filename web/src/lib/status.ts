@@ -1,4 +1,4 @@
-// Centralised status → color/label semantics, reused across the whole app (same tones as Leadscout).
+// Centralised status → color/label semantics, reused across the whole app (same tones as ZeaLead).
 
 import { t } from "@/i18n";
 

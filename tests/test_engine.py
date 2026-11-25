@@ -7,14 +7,14 @@ import re
 import time
 from types import SimpleNamespace as NS
 
-from leadscout import engine as engine_mod
-from leadscout.boundary import Envelope
-from leadscout.config import Settings
-from leadscout.connectors.base import Connector, Ctx, Item, ToolSpec, record_items
-from leadscout.governor import Governor
-from leadscout.store import Store
-from leadscout.tools import planner_tools, worker_tools
-from leadscout.verify import quote_in_text
+from zealead import engine as engine_mod
+from zealead.boundary import Envelope
+from zealead.config import Settings
+from zealead.connectors.base import Connector, Ctx, Item, ToolSpec, record_items
+from zealead.governor import Governor
+from zealead.store import Store
+from zealead.tools import planner_tools, worker_tools
+from zealead.verify import quote_in_text
 
 BRIEF = {"name": "t", "product": "Acme Invoicing", "description": "invoicing for freelancers",
          "ideal_customer": "freelancers", "recency_days": 30, "target_leads": 2, "platforms": [], "exclude_platforms": []}
@@ -210,7 +210,7 @@ def test_quote_normalization():
 
 
 def test_message_gates():
-    from leadscout.outreach import check_messages
+    from zealead.outreach import check_messages
     brief = {"product": "Acme Invoicing", "url": "https://www.example.com"}
     good_reply = "Reminders on a schedule fixed most of it for us. Disclosure: I work on Acme Invoicing."
     good_dm = "Hi Alice, saw your post about late payers. Acme Invoicing automates reminders: https://example.com/start"
@@ -225,8 +225,8 @@ def test_message_gates():
 
 
 def test_writer_refuses_copies_then_saves(tmp_path):
-    from leadscout.llm import LLM
-    from leadscout.outreach import draft_for_lead
+    from zealead.llm import LLM
+    from zealead.outreach import draft_for_lead
     st = Store(str(tmp_path / "w.db"))
     cid = st.create_campaign("t", BRIEF)
     leads = []

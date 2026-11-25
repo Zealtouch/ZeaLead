@@ -1,5 +1,5 @@
 [project]
-name = "leadscout"
+name = "zealead"
 version = "0.3.0"
 description = "Autonomous multi-agent lead finder: reads Reddit, Hacker News, X, LinkedIn and review sites to find people who need your product, with verified evidence."
 readme = "README.md"
@@ -26,21 +26,21 @@ dependencies = [
 dev = ["pytest>=8", "ruff>=0.6"]
 
 [project.scripts]
-leadscout = "leadscout.cli:main"
+zealead = "zealead.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/OWNER/leadscout"
-Issues = "https://github.com/OWNER/leadscout/issues"
+Homepage = "https://github.com/Zealtouch/ZeaLead"
+Issues = "https://github.com/Zealtouch/ZeaLead/issues"
 
 [build-system]
 requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["leadscout*"]
+include = ["zealead*"]
 
 [tool.setuptools.package-data]
-leadscout = ["webui/**/*", "brief_template.yaml"]
+zealead = ["webui/**/*", "brief_template.yaml"]
 
 [tool.ruff]
 line-length = 130

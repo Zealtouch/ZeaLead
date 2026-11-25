@@ -1,7 +1,7 @@
 import { fileURLToPath } from "node:url";
 
 // Static export: `NEXT_EXPORT=1 next build` produces a pure static directory at web/out,
-// served by the FastAPI backend (leadscout/webui). Dev (next dev) leaves the variable unset, keeping the /api reverse proxy and hot reload.
+// served by the FastAPI backend (zealead/webui). Dev (next dev) leaves the variable unset, keeping the /api reverse proxy and hot reload.
 const isExport = process.env.NEXT_EXPORT === "1";
 
 /** @type {import('next').NextConfig} */
@@ -24,9 +24,9 @@ const nextConfig = {
         trailingSlash: true,
       }
     : {
-        // Dev: reverse-proxy /api/* to the Python backend (default :8790, override with LEADSCOUT_API).
+        // Dev: reverse-proxy /api/* to the Python backend (default :8790, override with ZEALEAD_API).
         async rewrites() {
-          const backend = process.env.LEADSCOUT_API ?? "http://localhost:8790";
+          const backend = process.env.ZEALEAD_API ?? "http://localhost:8790";
           return [{ source: "/api/:path*", destination: `${backend}/api/:path*` }];
         },
       }),

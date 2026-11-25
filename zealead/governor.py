@@ -20,7 +20,7 @@ PROFILES = {
     "aggressive": {"interval": 0.4, "inflight": 4},
 }
 
-USER_AGENT = "leadscout/0.1 (market research; contact via repository)"
+USER_AGENT = "ZeaLead/0.1 (market research; contact via repository)"
 
 
 class Governor:

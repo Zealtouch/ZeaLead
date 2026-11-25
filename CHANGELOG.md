@@ -11,7 +11,7 @@ All notable changes to this project are listed here. The format follows
   from that person's own post, using the brief's new `outreach` section (sender, tone, offer).
   Drafts are refused if they don't name the product, link anywhere but the product URL, or nearly
   copy another lead's message. Edit or rewrite them in the lead view, draft missing ones per task,
-  or use `leadscout draft`. Auto-drafting, the writer model and effort are on the LLM page.
+  or use `zealead draft`. Auto-drafting, the writer model and effort are on the LLM page.
 
 ### Fixed
 - Missing Anthropic credentials now stop a run with a clear message instead of an internal error.
@@ -20,7 +20,7 @@ All notable changes to this project are listed here. The format follows
 ## [0.3.0] - 2026-11-25
 
 ### Added
-- New web console adapted from the Leadscout console (Next.js, shadcn/ui), with its themes, sidebar
+- New web console adapted from the ZeaLead console (Next.js, shadcn/ui), with its themes, sidebar
   and layout controls:
   - Dashboard: leads per day, leads by platform, newest leads, top communities, token spend.
   - Tasks with a detail view: Sessions (a live monitor of every agent session's transcript, with
@@ -29,7 +29,7 @@ All notable changes to this project are listed here. The format follows
   - System pages: LLM, Agent, Platforms, Users, Logs and System Settings.
 - Companies: group tasks and leads; a sidebar switcher narrows every page to one company.
 - User accounts with admin and member roles, replacing the shared access token. First-run setup
-  creates the admin; `leadscout user list|add|reset-password` and `./reset-password.sh` manage
+  creates the admin; `zealead user list|add|reset-password` and `./reset-password.sh` manage
   accounts from the command line.
 - Every agent session is recorded: its messages, each tool call (input, output, timing) and each
   model call (tokens, stop reason, latency).
@@ -38,17 +38,17 @@ All notable changes to this project are listed here. The format follows
 
 ### Changed
 - Campaigns are called tasks in the console. The API paths are unchanged.
-- Docker keeps the database and the signing key in named volumes (`leadscout-data`,
-  `leadscout-keys`) and publishes the port on `127.0.0.1` by default.
+- Docker keeps the database and the signing key in named volumes (`zealead-data`,
+  `zealead-keys`) and publishes the port on `127.0.0.1` by default.
 - The CSP allows inline scripts and styles, which the statically exported console needs.
 
 ### Removed
-- The access token (`leadscout.token`, `LEADSCOUT_UI_TOKEN`) and the previous vanilla-JS console.
+- The access token (`zealead.token`, `ZEALEAD_UI_TOKEN`) and the previous vanilla-JS console.
 
 ## [0.2.0] - 2026-11-25
 
 ### Added
-- Web console (`leadscout serve`), protected by an access token and bound to 127.0.0.1 by default.
+- Web console (`zealead serve`), protected by an access token and bound to 127.0.0.1 by default.
   - Campaign list, a new-campaign form, and controls to start, pause and delete campaigns.
   - Overview with goals, usage and platform yield.
   - Live activity feed and an intents list.
@@ -57,7 +57,7 @@ All notable changes to this project are listed here. The format follows
   - Communities and their coverage.
   - Brief editor and settings page.
   - Light and dark themes, and a mobile layout.
-- `leadscout demo` seeds a fictional campaign so the console can be tried without API keys.
+- `zealead demo` seeds a fictional campaign so the console can be tried without API keys.
 - Campaigns are claimed by a single runner, with a heartbeat, so the CLI and the console never
   run the same campaign at once.
 - Docker image and a compose file.

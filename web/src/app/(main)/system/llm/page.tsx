@@ -103,7 +103,7 @@ export default function LLMPage() {
               <ShieldCheck className="size-4" />
               {t("Server-side fallbacks")}
             </CardTitle>
-            <CardDescription>{t("Retries an overloaded model on a fallback model, server side (LEADSCOUT_FALLBACKS)")}</CardDescription>
+            <CardDescription>{t("Retries an overloaded model on a fallback model, server side (ZEALEAD_FALLBACKS)")}</CardDescription>
           </CardHeader>
           <CardContent className="text-sm">
             {data.fallbacks ? (

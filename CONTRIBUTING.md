@@ -1,11 +1,11 @@
-# Contributing to leadscout
+# Contributing to ZeaLead
 
 Thanks for helping. Bug reports, new connectors and prompt improvements are all welcome.
 
 ## Set up
 
 ```bash
-git clone https://github.com/OWNER/leadscout && cd leadscout
+git clone https://github.com/Zealtouch/ZeaLead && cd ZeaLead
 python3 -m venv .venv && .venv/bin/pip install -e '.[dev]'
 .venv/bin/python -m pytest -q
 .venv/bin/ruff check .
@@ -14,14 +14,14 @@ python3 -m venv .venv && .venv/bin/pip install -e '.[dev]'
 Work on the console (Next.js, in `web/`) with hot reload, against the API on :8790:
 
 ```bash
-LEADSCOUT_DB=demo.db .venv/bin/leadscout demo     # fictional sample data, no API keys
-LEADSCOUT_DB=demo.db .venv/bin/leadscout serve &
+ZEALEAD_DB=demo.db .venv/bin/zealead demo     # fictional sample data, no API keys
+ZEALEAD_DB=demo.db .venv/bin/zealead serve &
 cd web && npm ci && npm run dev                     # http://localhost:3000
 npm run typecheck && npm run build:static           # what CI runs
 ```
 
-`npm run dev` proxies `/api` to `LEADSCOUT_API` (default `http://localhost:8790`). For a
-production-like check, copy `web/out` to `leadscout/webui` and open the API port instead, or
+`npm run dev` proxies `/api` to `ZEALEAD_API` (default `http://localhost:8790`). For a
+production-like check, copy `web/out` to `zealead/webui` and open the API port instead, or
 run `./start.sh`.
 
 ## Ground rules
@@ -37,8 +37,8 @@ run `./start.sh`.
   `safeHref` (http and https only).
 - **Official APIs and search engines only.** Connectors must not scrape platforms whose terms
   forbid it (LinkedIn, X, Facebook, Instagram, Threads), get past logins or CAPTCHAs, or send
-  messages to people. leadscout finds people; it never contacts them.
-- **Follow the console's patterns.** It is adapted from the Leadscout web console: shadcn/ui
+  messages to people. ZeaLead finds people; it never contacts them.
+- **Follow the console's patterns.** It is adapted from the ZeaLead web console: shadcn/ui
   components, Tailwind, `usePoll` for data, `api.*` in `src/lib/api.ts` for every request, and
   the shared pieces in `src/components/ls/`. Pages use `?id=` query parameters because the
   console is a static export.

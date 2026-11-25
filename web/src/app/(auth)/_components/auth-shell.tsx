@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-// Two-panel sign-in layout from Leadscout: brand panel on the left, form on the right.
+// Two-panel sign-in layout from ZeaLead: brand panel on the left, form on the right.
 export function AuthShell({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
   return (
     <div className="flex h-dvh">
@@ -10,7 +10,7 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
           <div className="absolute size-60 rounded-full border border-primary-foreground/15" />
           <div className="absolute size-40 rounded-full border border-primary-foreground/20" />
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.svg" alt="leadscout" width={120} height={120} className="relative" />
+          <img src="/logo.svg" alt="ZeaLead" width={120} height={120} className="relative" />
         </div>
         <p className="mt-40 max-w-xs text-primary-foreground/70 text-sm">
           Finds the people already asking for a product like yours, with the quote that proves it.

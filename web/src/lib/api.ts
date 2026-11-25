@@ -163,7 +163,7 @@ export const api = {
   graph: (id: number) => http<{ nodes: GraphNode[]; edges: GraphEdge[] }>(`/campaigns/${id}/graph`),
   taskCommunities: (id: number) => http<CommunityRow[]>(`/campaigns/${id}/communities`),
   node: (id: number) => http<NodeDetail>(`/nodes/${id}`),
-  downloadReport: (id: number) => download(`/campaigns/${id}/report.html`, `leadscout-task-${id}-report.html`),
+  downloadReport: (id: number) => download(`/campaigns/${id}/report.html`, `zealead-task-${id}-report.html`),
   briefTemplate: () => http<{ yaml: string }>("/brief-template"),
 
   // leads
@@ -186,7 +186,7 @@ export const api = {
   draftLead: (id: number, instruction?: string) =>
     http<LeadDetail>(`/leads/${id}/draft`, json("POST", instruction ? { instruction } : {})),
   draftTaskMessages: (id: number) => http<{ queued: number }>(`/campaigns/${id}/draft-messages`, json("POST")),
-  downloadLeads: (p: Record<string, string | number | undefined>) => download(`/leads.csv${qs(p)}`, "leadscout-leads.csv"),
+  downloadLeads: (p: Record<string, string | number | undefined>) => download(`/leads.csv${qs(p)}`, "zealead-leads.csv"),
 
   // communities and records
   communities: (p: { company?: string | number; platform?: string; q?: string; offset?: number; limit?: number }) =>

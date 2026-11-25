@@ -81,7 +81,7 @@ export default function SettingsPage() {
           />
           <SettingsForm
             title={t("Platform pacing")}
-            description={t("leadscout reads public pages only and paces itself per host.")}
+            description={t("ZeaLead reads public pages only and paces itself per host.")}
             fields={NOISE_FIELDS}
             data={data}
             onSaved={reload}

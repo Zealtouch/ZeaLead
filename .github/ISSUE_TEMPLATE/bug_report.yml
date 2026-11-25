@@ -16,14 +16,14 @@ body:
     id: repro
     attributes:
       label: Steps to reproduce
-      placeholder: "1. leadscout run brief.yaml\n2. ..."
+      placeholder: "1. zealead run brief.yaml\n2. ..."
     validations:
       required: true
   - type: input
     id: version
     attributes:
       label: Version
-      description: Output of `leadscout --version`
+      description: Output of `zealead --version`
     validations:
       required: true
   - type: dropdown

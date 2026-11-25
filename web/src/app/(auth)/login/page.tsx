@@ -18,7 +18,7 @@ import { auth } from "@/lib/auth";
 import { AuthShell } from "../_components/auth-shell";
 import { ResponsibleUse } from "../_components/responsible-use";
 
-const AGREED_KEY = "leadscout.responsible-use";
+const AGREED_KEY = "zealead.responsible-use";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -74,7 +74,7 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthShell title={t("Sign in")} subtitle={t("Welcome back — sign in to continue to leadscout")}>
+    <AuthShell title={t("Sign in")} subtitle={t("Welcome back — sign in to continue to ZeaLead")}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="username">{t("Username")}</Label>

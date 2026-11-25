@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="web/public/logo.svg" width="84" alt="leadscout logo" />
+<img src="web/public/logo.svg" width="84" alt="ZeaLead logo" />
 
-# leadscout
+# ZeaLead
 
 **Find the people who need your product, with the quote that proves it.**
 
@@ -22,8 +22,8 @@ show a real need, each with the verbatim quote that proves it.
 
 ![Dashboard](docs/screenshots/dashboard.png)
 
-leadscout uses the same architecture as [Leadscout](https://github.com/BaaRai/Leadscout), the autonomous
-pentest platform. Leadscout explores a target for vulnerabilities; leadscout explores public
+ZeaLead uses the same architecture as [ZeaLead](https://github.com/BaaRai/ZeaLead), the autonomous
+pentest platform. ZeaLead explores a target for vulnerabilities; ZeaLead explores public
 conversations for buyers. A planner agent decides where to look next. Worker agents search the
 platforms, and every lead must survive an adversarial check and match a captured post word for
 word before it is recorded.
@@ -31,7 +31,7 @@ word before it is recorded.
 ## Quick start (Docker)
 
 ```bash
-git clone https://github.com/OWNER/leadscout && cd leadscout
+git clone https://github.com/Zealtouch/ZeaLead && cd ZeaLead
 ./start.sh                 # creates .env, builds the image, starts the console
 ```
 
@@ -42,31 +42,31 @@ click **New task**.
 | Command | What it does |
 |---|---|
 | `./start.sh` | Build (first run or after `git pull`) and start in the background |
-| `docker compose logs -f leadscout` | Follow the server log |
-| `docker compose down` | Stop. Data stays in the `leadscout-data` volume |
+| `docker compose logs -f zealead` | Follow the server log |
+| `docker compose down` | Stop. Data stays in the `zealead-data` volume |
 | `./reset-password.sh <username>` | Set a new password for a console user |
-| `docker compose exec leadscout leadscout demo` | Add a fictional sample task to explore without API keys |
+| `docker compose exec zealead zealead demo` | Add a fictional sample task to explore without API keys |
 
 The console is published on `127.0.0.1` only. To reach it from other machines, put a TLS reverse
-proxy in front (or set `LEADSCOUT_PUBLISH_ADDR` in `.env` if you accept the risk).
+proxy in front (or set `ZEALEAD_PUBLISH_ADDR` in `.env` if you accept the risk).
 
 ## Without Docker
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -e .
-(cd web && npm ci && npm run build:static) && cp -R web/out leadscout/webui
+(cd web && npm ci && npm run build:static) && cp -R web/out zealead/webui
 cp .env.example .env               # add ANTHROPIC_API_KEY plus any platform keys you have
-.venv/bin/leadscout serve          # http://localhost:8790
+.venv/bin/zealead serve          # http://localhost:8790
 ```
 
-Skip the `web` step and `leadscout serve` still runs the API; the CLI works on its own:
+Skip the `web` step and `zealead serve` still runs the API; the CLI works on its own:
 
 ```bash
 cp brief.example.yaml brief.yaml   # describe your product and ideal customer
-leadscout platforms brief.yaml     # which platforms your keys unlock
-leadscout run brief.yaml
-leadscout leads 1 --min warm --messages   # best leads with their drafted messages
-leadscout draft 1                  # draft messages for leads that have none (--lead N to rewrite one)
+zealead platforms brief.yaml     # which platforms your keys unlock
+zealead run brief.yaml
+zealead leads 1 --min warm --messages   # best leads with their drafted messages
+zealead draft 1                  # draft messages for leads that have none (--lead N to rewrite one)
 ```
 
 ## Screenshots
@@ -106,7 +106,7 @@ leadscout draft 1                  # draft messages for leads that have none (--
 
 ## The console
 
-The console uses the same layout and theme system as the Leadscout web console: a sidebar with a
+The console uses the same layout and theme system as the ZeaLead web console: a sidebar with a
 company switcher, **Functions** for the work and **System** for configuration.
 
 - **Tasks**: every lead-finding task with live status, leads and spend; create one from a form or
@@ -156,9 +156,9 @@ are rate limited.
 
 For details, see [docs/architecture.md](docs/architecture.md).
 
-### What carried over from Leadscout
+### What carried over from ZeaLead
 
-| Leadscout | leadscout |
+| ZeaLead | ZeaLead |
 |---|---|
 | Asset graph (domain → subdomain → service → endpoint), shared across tasks | Source graph (platform → community → thread, plus authors), shared across campaigns |
 | Exploration graph: goal / intent / fact / finding / hint | Same, with **lead** in place of finding |
@@ -191,7 +191,7 @@ offer. Set who signs, the tone and the offer in the brief's `outreach` section. 
 draft that doesn't name the product, links anywhere but your product URL, or is a near-copy of a
 message already written for another lead, so everyone gets a different message. Drafts appear as
 leads are found; edit them, rewrite them with an instruction ("shorter, more formal"), or turn
-off auto-drafting on the LLM page. leadscout never sends anything: you review and post.
+off auto-drafting on the LLM page. ZeaLead never sends anything: you review and post.
 
 ## Platforms
 
@@ -225,7 +225,7 @@ add a platform, see [docs/connectors.md](docs/connectors.md).
 Settings come from `.env` (see [.env.example](.env.example)); models, effort and limits can be
 overridden from the console.
 Both agents default to `claude-opus-5-5`, with the planner at `high` effort and workers at
-`medium`. A typical campaign of 20–40 intents uses 1–3M tokens. `LEADSCOUT_BUDGET_TOKENS` caps
+`medium`. A typical campaign of 20–40 intents uses 1–3M tokens. `ZEALEAD_BUDGET_TOKENS` caps
 it, and the task's Overview and the LLM Recording page show the spend.
 
 ## Development
@@ -235,7 +235,7 @@ pip install -e '.[dev]'
 python -m pytest -q && ruff check .
 
 # console, with hot reload, against a local API on :8790
-leadscout serve &
+zealead serve &
 cd web && npm ci && npm run dev    # http://localhost:3000
 ```
 
@@ -252,6 +252,6 @@ Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) and the
 
 ## License
 
-[AGPL-3.0-or-later](LICENSE). leadscout adapts its architecture, prompts and web console from
-[Leadscout](https://github.com/BaaRai/Leadscout), which is AGPL-3.0; see [NOTICE](NOTICE). If you modify
-leadscout and run it as a service for others, you must offer them your modified source.
+[AGPL-3.0-or-later](LICENSE). ZeaLead adapts its architecture, prompts and web console from
+[ZeaLead](https://github.com/BaaRai/ZeaLead), which is AGPL-3.0; see [NOTICE](NOTICE). If you modify
+ZeaLead and run it as a service for others, you must offer them your modified source.

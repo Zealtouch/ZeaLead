@@ -5,18 +5,18 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from leadscout import auth as A
-from leadscout.config import Settings
-from leadscout.demo import seed
-from leadscout.server import create_app
-from leadscout.store import Store
+from zealead import auth as A
+from zealead.config import Settings
+from zealead.demo import seed
+from zealead.server import create_app
+from zealead.store import Store
 
 PW = "correct horse battery"
 
 
 @pytest.fixture
 def anon(tmp_path, monkeypatch):
-    monkeypatch.setenv("LEADSCOUT_KEYS_DIR", str(tmp_path / "keys"))
+    monkeypatch.setenv("ZEALEAD_KEYS_DIR", str(tmp_path / "keys"))
     s = Settings.load()
     s.db_path = str(tmp_path / "s.db")
     st = Store(s.db_path)

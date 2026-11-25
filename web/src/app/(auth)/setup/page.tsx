@@ -48,7 +48,7 @@ export default function SetupPage() {
     setError("");
     try {
       const { token } = await api.setup(username.trim(), password);
-      localStorage.setItem("leadscout.responsible-use", "1");
+      localStorage.setItem("zealead.responsible-use", "1");
       auth.setToken(token);
       window.location.replace("/dashboard");
     } catch (err) {

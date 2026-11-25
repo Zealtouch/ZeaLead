@@ -64,7 +64,7 @@ def _run(cid: int, s: Settings, st: Store):
         sys.exit(str(e))
     except KeyboardInterrupt:
         st.set_campaign_status(cid, "paused", "interrupted by operator")
-        print(f"\npaused. Resume with: leadscout resume {cid}")
+        print(f"\npaused. Resume with: zealead resume {cid}")
         return
     print(f"\ncampaign #{cid} finished: {reason}")
     cmd_status(argparse.Namespace(campaign=cid), s, st)
@@ -129,7 +129,7 @@ def cmd_draft(a, s: Settings, st: Store):
     if a.campaign is None:
         sys.exit("give a campaign id, or --lead N")
     n = asyncio.run(draft_pending(llm, st, a.campaign, s.writer_model, s.writer_effort, limit=500))
-    print(f"drafted messages for {n} lead(s); see them with: leadscout leads {a.campaign} --messages")
+    print(f"drafted messages for {n} lead(s); see them with: zealead leads {a.campaign} --messages")
 
 
 def cmd_report(a, s: Settings, st: Store):
@@ -170,7 +170,7 @@ def cmd_serve(a, s: Settings, st: Store):
 def cmd_demo(a, s: Settings, st: Store):
     from .demo import seed
     cid = seed(st)
-    print(f"sample campaign #{cid} created (fictional data). Run `leadscout serve` and open it in the console.")
+    print(f"sample campaign #{cid} created (fictional data). Run `zealead serve` and open it in the console.")
 
 
 def _ask_password() -> str:
@@ -217,13 +217,13 @@ def cmd_list(a, s: Settings, st: Store):
 
 
 def main(argv=None):
-    p = argparse.ArgumentParser(prog="leadscout", description="Autonomous multi-platform lead finder")
+    p = argparse.ArgumentParser(prog="zealead", description="Autonomous multi-platform lead finder")
     p.add_argument("-v", "--verbose", action="store_true")
     p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     sub = p.add_subparsers(dest="cmd", required=True)
     sp = sub.add_parser("serve", help="start the web console")
-    sp.add_argument("--host", default=os.environ.get("LEADSCOUT_BIND_ADDR", "127.0.0.1"))
-    sp.add_argument("--port", type=int, default=int(os.environ.get("LEADSCOUT_PORT", "8790")))
+    sp.add_argument("--host", default=os.environ.get("ZEALEAD_BIND_ADDR", "127.0.0.1"))
+    sp.add_argument("--port", type=int, default=int(os.environ.get("ZEALEAD_PORT", "8790")))
     sp.set_defaults(fn=cmd_serve)
     sp = sub.add_parser("demo", help="add a sample campaign with fictional data, to try the console")
     sp.set_defaults(fn=cmd_demo)

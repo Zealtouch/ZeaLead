@@ -1,8 +1,8 @@
 # Architecture
 
-leadscout is an event-driven multi-agent loop over two linked graphs. The design is adapted
-from [Leadscout](https://github.com/BaaRai/Leadscout). Leadscout explores a target for vulnerabilities;
-leadscout explores public conversations for people who need your product.
+ZeaLead is an event-driven multi-agent loop over two linked graphs. The design is adapted
+from [ZeaLead](https://github.com/BaaRai/ZeaLead). ZeaLead explores a target for vulnerabilities;
+ZeaLead explores public conversations for people who need your product.
 
 ```
  brief ──▶ goal decomposer ──▶ goals + constraints
@@ -39,8 +39,8 @@ leadscout explores public conversations for people who need your product.
 | `boundary.py` | Nonce envelope for untrusted text |
 | `governor.py` | Per-host pacing and backoff; a shared HTTP client |
 | `connectors/` | Platform tools (see [connectors.md](connectors.md)) |
-| `server.py`, `auth.py` | FastAPI JSON API, user accounts and signed sessions; serves the built console from `leadscout/webui` |
-| `web/` (repo root) | The console: Next.js static export adapted from the Leadscout web console |
+| `server.py`, `auth.py` | FastAPI JSON API, user accounts and signed sessions; serves the built console from `zealead/webui` |
+| `web/` (repo root) | The console: Next.js static export adapted from the ZeaLead web console |
 | `cli.py`, `report.py`, `demo.py` | Command line, static HTML report, sample data |
 
 ## The loop
@@ -90,7 +90,7 @@ on the same origin, and CSV export neutralizes formula prefixes.
 
 ## Console and runner
 
-`leadscout serve` hosts the API and the console in a single process. Starting a campaign from
+`zealead serve` hosts the API and the console in a single process. Starting a campaign from
 the console runs the same `Engine` in a background task. A campaign row records its runner
 (`cli` or `console`) and a heartbeat. A second runner is refused while the heartbeat is less
 than 45 seconds old, so the CLI and the console never run the same campaign at the same time.
@@ -105,7 +105,7 @@ writes a public reply and a direct message. The tool refuses drafts that are too
 don't name the product, contain links other than the product URL (and none in the public reply),
 or are more than 80% similar to a draft already saved for another lead in the task. While a task
 runs, the engine's writer loop drafts each new lead; a task that finishes on its own drafts any
-lead still waiting. Drafting on request (`POST /api/leads/{id}/draft`, `leadscout draft`) isn't
+lead still waiting. Drafting on request (`POST /api/leads/{id}/draft`, `zealead draft`) isn't
 held to the task's token budget.
 
 ### Sessions
@@ -127,6 +127,6 @@ key is created on first start in the keys directory with mode 0600.
 ### Docker
 
 The image has two stages: Node builds the console (`npm run build:static`), and the Python stage
-installs the package with the console copied into `leadscout/webui`. One process serves both on
+installs the package with the console copied into `zealead/webui`. One process serves both on
 port 8790. Compose keeps the database and the signing key in named volumes and publishes the port
 on `127.0.0.1`.

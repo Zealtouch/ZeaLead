@@ -1,4 +1,4 @@
-// leadscout domain model — the shapes the FastAPI backend (leadscout/server.py) returns.
+// ZeaLead domain model — the shapes the FastAPI backend (zealead/server.py) returns.
 
 export type LeadLevel = "hot" | "warm" | "cold";
 export type LeadStatus = "new" | "contacted" | "replied" | "won" | "dismissed";

@@ -5,7 +5,7 @@ const AUTH_PAGES = ["/login", "/setup"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const token = request.cookies.get("leadscout_token")?.value;
+  const token = request.cookies.get("zealead_token")?.value;
   const isAuthPage = AUTH_PAGES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
   // Not logged in → redirect to the login page

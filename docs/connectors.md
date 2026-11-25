@@ -22,7 +22,7 @@ and building what the model sees.
 ## Skeleton
 
 ```python
-# leadscout/connectors/example.py
+# zealead/connectors/example.py
 from .base import Connector, Ctx, Item, ToolSpec, record_items
 
 class Example(Connector):
@@ -62,7 +62,7 @@ class Example(Connector):
 
 Then:
 
-1. Add the class to `ALL` in `leadscout/connectors/__init__.py`.
+1. Add the class to `ALL` in `zealead/connectors/__init__.py`.
 2. Document the keys it needs in `.env.example` and in the platform table in the README.
 3. Add a test that returns a fake HTTP response (no network). The `FakeReddit` connector in
    `tests/test_engine.py` shows the shape.

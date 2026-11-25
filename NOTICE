@@ -1,5 +1,5 @@
-leadscout
-Copyright (C) 2026 leadscout contributors
+ZeaLead
+Copyright (C) 2026 ZeaLead contributors
 
 This program is free software: you can redistribute it and/or modify it under the terms of the
 GNU Affero General Public License as published by the Free Software Foundation, either version 3
@@ -8,25 +8,25 @@ of the License, or (at your option) any later version. See LICENSE.
 ------------------------------------------------------------------------------------------------
 Derived work notice
 
-leadscout's architecture and its planner, worker and goal-decomposer prompts are adapted from
-Leadscout, an autonomous penetration-testing platform licensed under AGPL-3.0:
+ZeaLead's architecture and its planner, worker and goal-decomposer prompts are adapted from
+ZeaLead, an autonomous penetration-testing platform licensed under AGPL-3.0:
 
-    https://github.com/BaaRai/Leadscout
+    https://github.com/BaaRai/ZeaLead
 
 The ideas adapted include the two linked graphs (shared source graph plus per-campaign exploration
 graph), the event-driven planner with debounce, heartbeat and hard floor, single-intent workers with
 an adversarial gate before reporting, verified evidence, early-proof refusal, the nonce-tagged
 untrusted-data boundary, and the per-host noise governor.
 
-The web console in web/ is adapted from the Leadscout web console: its layout, sidebar, theme presets,
-preferences, UI components and the exploration-graph layout. leadscout's pages, API client and
+The web console in web/ is adapted from the ZeaLead web console: its layout, sidebar, theme presets,
+preferences, UI components and the exploration-graph layout. ZeaLead's pages, API client and
 domain components are new. The UI components derive from shadcn/ui (MIT License).
 
-leadscout is distributed under the same license as Leadscout.
+ZeaLead is distributed under the same license as ZeaLead.
 
 ------------------------------------------------------------------------------------------------
 Network use
 
-If you modify leadscout and let other people use it over a network (for example, by hosting the
+If you modify ZeaLead and let other people use it over a network (for example, by hosting the
 console for clients), AGPL-3.0 section 13 requires you to offer those users the source code of
 your modified version.

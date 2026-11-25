@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import re
 from datetime import date
@@ -9,6 +10,7 @@ from datetime import date
 from .boundary import Envelope
 from .connectors import Ctx
 from .llm import LLM, Tool
+from .providers import rule_attempts, rule_delay
 from .store import Store
 from .tools import connector_tools, goal_progress, planner_tools, worker_tools
 
@@ -269,9 +271,22 @@ async def run_worker(llm: LLM, ctx: Ctx, intent, brief: dict, connectors, model:
     def step(kind, summary, detail):
         store.log(cid, "worker", kind, summary, detail, intent_id=intent.id)
 
-    res = await llm.run(cid=cid, role="worker", intent_id=intent.id, model=model, effort=effort, system=system,
-                        user=user, tools=tools, max_turns=max_turns, on_step=step,
-                        title=intent.summary)
+    # Intent rerun: the outermost retry layer. When the model call itself failed (inner retries and
+    # pool failover exhausted), run the whole intent again from scratch.
+    rule = llm.retry_policy().get("intent") if hasattr(llm, "retry_policy") else None
+    reruns = rule_attempts(rule, "intent")
+    attempt = 0
+    while True:
+        res = await llm.run(cid=cid, role="worker", intent_id=intent.id, model=model, effort=effort, system=system,
+                            user=user, tools=tools, max_turns=max_turns, on_step=step,
+                            title=intent.summary if not attempt else f"{intent.summary} (rerun {attempt})")
+        if not getattr(res, "model_error", False) or attempt >= reruns:
+            break
+        wait = rule_delay(rule, "intent", attempt)
+        attempt += 1
+        store.log(cid, "worker", "text", f"model error, rerunning intent in {wait:.0f}s ({attempt}/{reruns}): {res.error}"[:300],
+                  intent_id=intent.id)
+        await asyncio.sleep(wait)
     if res.error and not res.text:
         state = "blocked"
     elif res.exhausted:

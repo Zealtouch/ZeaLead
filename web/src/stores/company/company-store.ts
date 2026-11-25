@@ -19,7 +19,7 @@ export const useCompanyStore = create<CompanyState>()(
       companyName: "",
       setCompany: (id, name = "") => set({ companyId: id, companyName: id === null ? "" : name }),
     }),
-    { name: "leadscout-active-company" },
+    { name: "zealead-active-company" },
   ),
 );
 

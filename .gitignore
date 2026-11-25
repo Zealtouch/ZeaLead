@@ -14,7 +14,7 @@ leads-report.html
 *.csv
 
 # console build output and deps
-leadscout/webui/
+zealead/webui/
 web/node_modules/
 web/.next/
 web/out/

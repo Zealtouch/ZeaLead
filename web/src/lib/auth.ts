@@ -1,4 +1,4 @@
-const TOKEN_KEY = "leadscout_token";
+const TOKEN_KEY = "zealead_token";
 const COOKIE_MAX_AGE = 7 * 24 * 60 * 60; // 7 days (seconds), same as the server-side token lifetime
 
 export interface CurrentUser {

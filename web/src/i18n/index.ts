@@ -1,5 +1,5 @@
-// UI text layer kept from Leadscout: t("Text") returns the English source text and fills
-// {placeholders}. To translate leadscout, add locales/<code>.json and a lookup here.
+// UI text layer kept from ZeaLead: t("Text") returns the English source text and fills
+// {placeholders}. To translate ZeaLead, add locales/<code>.json and a lookup here.
 
 export type Locale = "en";
 export const DEFAULT_LOCALE: Locale = "en";

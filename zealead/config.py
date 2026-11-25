@@ -45,6 +45,12 @@ class Settings:
     writer_model: str = "claude-opus-5-5"   # drafts the personalised message for each lead
     writer_effort: str = "low"
     auto_draft: int = 1                     # 1 = draft messages for every new lead while the task runs
+    # LLM pool (System -> LLM). Profiles themselves live in the llm_profiles table.
+    llm_pool_enabled: int = 0               # 1 = fail over to other profiles when one is unusable
+    llm_pool_bind_fallback: int = 0         # 1 = a role pinned to a profile may also fall back
+    planner_profile: str = ""               # profile id pinned to the decomposer + planner; "" = active profile
+    worker_profile: str = ""
+    writer_profile: str = ""
     env: dict = field(default_factory=dict)
 
     @classmethod
@@ -52,21 +58,21 @@ class Settings:
         _load_dotenv()
         e = os.environ
         return cls(
-            db_path=e.get("LEADSCOUT_DB", "leadscout.db"),
-            planner_model=e.get("LEADSCOUT_PLANNER_MODEL", "claude-opus-5-5"),
-            worker_model=e.get("LEADSCOUT_WORKER_MODEL", "claude-opus-5-5"),
-            planner_effort=e.get("LEADSCOUT_PLANNER_EFFORT", "high"),
-            worker_effort=e.get("LEADSCOUT_WORKER_EFFORT", "medium"),
-            workers=_int("LEADSCOUT_WORKERS", 3),
-            budget_tokens=_int("LEADSCOUT_BUDGET_TOKENS", 3_000_000),
-            intent_max_turns=_int("LEADSCOUT_INTENT_MAX_TURNS", 25),
-            planner_max_turns=_int("LEADSCOUT_PLANNER_MAX_TURNS", 12),
-            heartbeat_seconds=_int("LEADSCOUT_HEARTBEAT_SECONDS", 90),
-            stagnation_rounds=_int("LEADSCOUT_STAGNATION_ROUNDS", 10),
-            noise_profile=e.get("LEADSCOUT_NOISE_PROFILE", "balanced"),
-            writer_model=e.get("LEADSCOUT_WRITER_MODEL") or e.get("LEADSCOUT_WORKER_MODEL", "claude-opus-5-5"),
-            writer_effort=e.get("LEADSCOUT_WRITER_EFFORT", "low"),
-            auto_draft=1 if _int("LEADSCOUT_AUTO_DRAFT", 1) else 0,
+            db_path=e.get("ZEALEAD_DB", "zealead.db"),
+            planner_model=e.get("ZEALEAD_PLANNER_MODEL", "claude-opus-5-5"),
+            worker_model=e.get("ZEALEAD_WORKER_MODEL", "claude-opus-5-5"),
+            planner_effort=e.get("ZEALEAD_PLANNER_EFFORT", "high"),
+            worker_effort=e.get("ZEALEAD_WORKER_EFFORT", "medium"),
+            workers=_int("ZEALEAD_WORKERS", 3),
+            budget_tokens=_int("ZEALEAD_BUDGET_TOKENS", 3_000_000),
+            intent_max_turns=_int("ZEALEAD_INTENT_MAX_TURNS", 25),
+            planner_max_turns=_int("ZEALEAD_PLANNER_MAX_TURNS", 12),
+            heartbeat_seconds=_int("ZEALEAD_HEARTBEAT_SECONDS", 90),
+            stagnation_rounds=_int("ZEALEAD_STAGNATION_ROUNDS", 10),
+            noise_profile=e.get("ZEALEAD_NOISE_PROFILE", "balanced"),
+            writer_model=e.get("ZEALEAD_WRITER_MODEL") or e.get("ZEALEAD_WORKER_MODEL", "claude-opus-5-5"),
+            writer_effort=e.get("ZEALEAD_WRITER_EFFORT", "low"),
+            auto_draft=1 if _int("ZEALEAD_AUTO_DRAFT", 1) else 0,
             env=dict(e),
         )
 
@@ -84,8 +90,8 @@ class Settings:
         return s
 
 
-# Settings the console may edit. API keys are deliberately absent: secrets stay
-# in the environment / .env and are only reported as configured or missing.
+# Settings the console may edit. API keys are deliberately absent: the environment key
+# stays in .env, and model-profile keys go through /api/llm/profiles (encrypted, write-only).
 EDITABLE: dict[str, tuple[str, type]] = {
     "planner_model": ("planner_model", str),
     "worker_model": ("worker_model", str),
@@ -101,6 +107,11 @@ EDITABLE: dict[str, tuple[str, type]] = {
     "writer_model": ("writer_model", str),
     "writer_effort": ("writer_effort", str),
     "auto_draft": ("auto_draft", int),
+    "llm_pool_enabled": ("llm_pool_enabled", int),
+    "llm_pool_bind_fallback": ("llm_pool_bind_fallback", int),
+    "planner_profile": ("planner_profile", str),
+    "worker_profile": ("worker_profile", str),
+    "writer_profile": ("writer_profile", str),
 }
 
 

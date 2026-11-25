@@ -92,7 +92,7 @@ function Draft({
 }
 
 // LeadMessages: the personalised public reply and direct message drafted for this one person
-// from their own post. Editable; leadscout never sends them — a person copies and posts.
+// from their own post. Editable; ZeaLead never sends them — a person copies and posts.
 export function LeadMessages({ lead, onChange }: { lead: LeadDetail; onChange: (l: LeadDetail) => void }) {
   const [busy, setBusy] = React.useState(false);
   const [instruction, setInstruction] = React.useState("");

@@ -3,7 +3,7 @@ export function ResponsibleUse() {
   return (
     <div className="space-y-4 text-sm leading-relaxed">
       <p>
-        leadscout reads public posts through official APIs and search engines to find people who describe a need your
+        ZeaLead reads public posts through official APIs and search engines to find people who describe a need your
         product meets. Using it responsibly is your job:
       </p>
       <ul className="list-disc space-y-2 pl-5">
@@ -25,7 +25,7 @@ export function ResponsibleUse() {
         </li>
       </ul>
       <p className="text-muted-foreground">
-        leadscout is free software under the GNU AGPL-3.0, provided without warranty. If you run a modified version as
+        ZeaLead is free software under the GNU AGPL-3.0, provided without warranty. If you run a modified version as
         a service for others, you must offer them its source.
       </p>
     </div>
