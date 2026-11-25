@@ -20,7 +20,7 @@ All notable changes to this project are listed here. The format follows
 ## [0.3.0] - 2026-11-25
 
 ### Added
-- New web console adapted from the ZeaLead console (Next.js, shadcn/ui), with its themes, sidebar
+- New web console adapted from the ARTEX console (Next.js, shadcn/ui), with its themes, sidebar
   and layout controls:
   - Dashboard: leads per day, leads by platform, newest leads, top communities, token spend.
   - Tasks with a detail view: Sessions (a live monitor of every agent session's transcript, with

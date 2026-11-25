@@ -38,7 +38,7 @@ run `./start.sh`.
 - **Official APIs and search engines only.** Connectors must not scrape platforms whose terms
   forbid it (LinkedIn, X, Facebook, Instagram, Threads), get past logins or CAPTCHAs, or send
   messages to people. ZeaLead finds people; it never contacts them.
-- **Follow the console's patterns.** It is adapted from the ZeaLead web console: shadcn/ui
+- **Follow the console's patterns.** It is adapted from the ARTEX web console: shadcn/ui
   components, Tailwind, `usePoll` for data, `api.*` in `src/lib/api.ts` for every request, and
   the shared pieces in `src/components/ls/`. Pages use `?id=` query parameters because the
   console is a static export.

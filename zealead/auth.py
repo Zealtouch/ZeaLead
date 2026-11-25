@@ -1,7 +1,7 @@
 """User accounts for the console: scrypt password hashes and HS256 session tokens.
 
 Standard library only. The signing key lives in the keys directory (mode 0600),
-kept apart from the data directory like ZeaLead's keys/ volume, so sessions
+kept apart from the data directory like ARTEX's keys/ volume, so sessions
 survive container rebuilds. A token carries a fingerprint of the user's current
 password hash: changing a password signs that user out everywhere.
 """

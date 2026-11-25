@@ -1,4 +1,4 @@
-// UI text layer kept from ZeaLead: t("Text") returns the English source text and fills
+// UI text layer kept from ARTEX: t("Text") returns the English source text and fills
 // {placeholders}. To translate ZeaLead, add locales/<code>.json and a lookup here.
 
 export type Locale = "en";

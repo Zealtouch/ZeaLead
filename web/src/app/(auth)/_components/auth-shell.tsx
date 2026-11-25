@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-// Two-panel sign-in layout from ZeaLead: brand panel on the left, form on the right.
+// Two-panel sign-in layout from ARTEX: brand panel on the left, form on the right.
 export function AuthShell({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
   return (
     <div className="flex h-dvh">

@@ -9,20 +9,21 @@ of the License, or (at your option) any later version. See LICENSE.
 Derived work notice
 
 ZeaLead's architecture and its planner, worker and goal-decomposer prompts are adapted from
-ZeaLead, an autonomous penetration-testing platform licensed under AGPL-3.0:
+ARTEX, an autonomous penetration-testing platform licensed under AGPL-3.0:
 
-    https://github.com/BaaRai/ZeaLead
+    https://github.com/BaaRai/ARTEX
+    Copyright (C) ARTEX contributors
 
 The ideas adapted include the two linked graphs (shared source graph plus per-campaign exploration
 graph), the event-driven planner with debounce, heartbeat and hard floor, single-intent workers with
 an adversarial gate before reporting, verified evidence, early-proof refusal, the nonce-tagged
 untrusted-data boundary, and the per-host noise governor.
 
-The web console in web/ is adapted from the ZeaLead web console: its layout, sidebar, theme presets,
+The web console in web/ is adapted from the ARTEX web console: its layout, sidebar, theme presets,
 preferences, UI components and the exploration-graph layout. ZeaLead's pages, API client and
 domain components are new. The UI components derive from shadcn/ui (MIT License).
 
-ZeaLead is distributed under the same license as ZeaLead.
+ZeaLead is distributed under the same license as ARTEX.
 
 ------------------------------------------------------------------------------------------------
 Network use

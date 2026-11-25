@@ -1,7 +1,7 @@
 # Architecture
 
 ZeaLead is an event-driven multi-agent loop over two linked graphs. The design is adapted
-from [ZeaLead](https://github.com/BaaRai/ZeaLead). ZeaLead explores a target for vulnerabilities;
+from [ARTEX](https://github.com/BaaRai/ARTEX). ARTEX explores a target for vulnerabilities;
 ZeaLead explores public conversations for people who need your product.
 
 ```
@@ -40,7 +40,7 @@ ZeaLead explores public conversations for people who need your product.
 | `governor.py` | Per-host pacing and backoff; a shared HTTP client |
 | `connectors/` | Platform tools (see [connectors.md](connectors.md)) |
 | `server.py`, `auth.py` | FastAPI JSON API, user accounts and signed sessions; serves the built console from `zealead/webui` |
-| `web/` (repo root) | The console: Next.js static export adapted from the ZeaLead web console |
+| `web/` (repo root) | The console: Next.js static export adapted from the ARTEX web console |
 | `cli.py`, `report.py`, `demo.py` | Command line, static HTML report, sample data |
 
 ## The loop

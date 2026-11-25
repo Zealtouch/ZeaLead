@@ -1,4 +1,4 @@
-// Centralised status → color/label semantics, reused across the whole app (same tones as ZeaLead).
+// Centralised status → color/label semantics, reused across the whole app (same tones as ARTEX).
 
 import { t } from "@/i18n";
 

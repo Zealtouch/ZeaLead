@@ -59,7 +59,7 @@ function pushMap(m: Map<number, number[]>, k: number, v: number) {
   else m.set(k, [v]);
 }
 
-// Layered layout (from ZeaLead): longest-path layers along edges with cycle-safe back-edge
+// Layered layout (from ARTEX): longest-path layers along edges with cycle-safe back-edge
 // removal, then barycenter sweeps to reduce crossings, so goal → intent → fact/lead reads
 // left to right.
 function computeLayout(nodes: GraphNode[], edges: GraphEdge[]): Map<number, { x: number; y: number }> {

@@ -14,7 +14,7 @@ show a real need, each with the verbatim quote that proves it.
 ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-6b34db)
 ![Docker](https://img.shields.io/badge/docker-ready-6b34db)
 
-[Quick start](#quick-start-docker) · [Screenshots](#screenshots) · [How it works](#how-it-works) · [Platforms](#platforms) · [Configuration](#configuration) · [Security](SECURITY.md)
+[Quick start](#quick-start-docker) · [Screenshots](#screenshots) · [How it works](#how-it-works) · [Platforms](#platforms) · [Configuration](#configuration) · [Credits](#credits) · [Security](SECURITY.md)
 
 </div>
 
@@ -22,8 +22,8 @@ show a real need, each with the verbatim quote that proves it.
 
 ![Dashboard](docs/screenshots/dashboard.png)
 
-ZeaLead uses the same architecture as [ZeaLead](https://github.com/BaaRai/ZeaLead), the autonomous
-pentest platform. ZeaLead explores a target for vulnerabilities; ZeaLead explores public
+ZeaLead uses the same architecture as [ARTEX](https://github.com/BaaRai/ARTEX), the autonomous
+pentest platform. ARTEX explores a target for vulnerabilities; ZeaLead explores public
 conversations for buyers. A planner agent decides where to look next. Worker agents search the
 platforms, and every lead must survive an adversarial check and match a captured post word for
 word before it is recorded.
@@ -106,7 +106,7 @@ zealead draft 1                  # draft messages for leads that have none (--le
 
 ## The console
 
-The console uses the same layout and theme system as the ZeaLead web console: a sidebar with a
+The console uses the same layout and theme system as the ARTEX web console: a sidebar with a
 company switcher, **Functions** for the work and **System** for configuration.
 
 - **Tasks**: every lead-finding task with live status, leads and spend; create one from a form or
@@ -156,9 +156,9 @@ are rate limited.
 
 For details, see [docs/architecture.md](docs/architecture.md).
 
-### What carried over from ZeaLead
+### What carried over from ARTEX
 
-| ZeaLead | ZeaLead |
+| ARTEX | ZeaLead |
 |---|---|
 | Asset graph (domain → subdomain → service → endpoint), shared across tasks | Source graph (platform → community → thread, plus authors), shared across campaigns |
 | Exploration graph: goal / intent / fact / finding / hint | Same, with **lead** in place of finding |
@@ -250,8 +250,18 @@ Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) and the
 [Code of Conduct](CODE_OF_CONDUCT.md), and report vulnerabilities privately as described in
 [SECURITY.md](SECURITY.md).
 
+## Credits
+
+ZeaLead is built on [ARTEX](https://github.com/BaaRai/ARTEX), the open-source autonomous
+penetration-testing platform. Thanks to the ARTEX authors and contributors: ZeaLead adapts its
+two-graph planner/worker architecture, the planner, worker and goal-decomposer prompts, the
+evidence and adversarial-gate design, and the web console (layout, sidebar, theme presets, UI
+components and exploration-graph layout). See [NOTICE](NOTICE) for the full attribution.
+
+The console's UI components derive from [shadcn/ui](https://ui.shadcn.com) (MIT License).
+
 ## License
 
 [AGPL-3.0-or-later](LICENSE). ZeaLead adapts its architecture, prompts and web console from
-[ZeaLead](https://github.com/BaaRai/ZeaLead), which is AGPL-3.0; see [NOTICE](NOTICE). If you modify
+[ARTEX](https://github.com/BaaRai/ARTEX), which is AGPL-3.0; see [NOTICE](NOTICE). If you modify
 ZeaLead and run it as a service for others, you must offer them your modified source.

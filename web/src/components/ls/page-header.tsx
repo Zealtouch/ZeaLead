@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-// Page title block used by every list page (same as ZeaLead's Findings header).
+// Page title block used by every list page (same as ARTEX's Findings header).
 export function PageHeader({ title, description, actions }: { title: string; description?: string; actions?: ReactNode }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
