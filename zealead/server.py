@@ -1,13 +1,15 @@
 """Console backend: JSON API plus the static Next.js UI, with campaigns running in-process.
 
-Security model (self-hosted, like ZeaLead):
+Security model (self-hosted, like ARTEX):
 - User accounts. On first start the console asks for an admin account (/setup);
   after that every /api route except health, auth status and login needs a
   signed session token. Passwords are scrypt-hashed; the signing key lives in
   the keys directory, apart from the data.
 - Binds to 127.0.0.1 by default. In Docker the published port is bound to
   127.0.0.1 unless ZEALEAD_BIND_ADDR says otherwise.
-- API keys are never accepted or returned by the API; they live in .env.
+- The environment API key lives in .env. Model-profile keys (System → LLM) are
+  accepted write-only, stored AES-GCM encrypted under keys/llm.key, and only ever
+  returned as a masked hint.
 - Collected posts are attacker-written text. The UI renders them as React text
   (escaped), never as HTML, and the CSP forbids loading code from elsewhere.
 """
@@ -18,6 +20,7 @@ import asyncio
 import contextlib
 import csv
 import io
+import json
 import logging
 import os
 import platform as py_platform
@@ -32,6 +35,7 @@ from fastapi.staticfiles import StaticFiles
 
 from . import __version__
 from . import auth as A
+from . import providers as PV
 from .agents import DECOMPOSER_SYSTEM, PLANNER_SYSTEM, WORKER_SYSTEM
 from .boundary import Envelope
 from .config import EDITABLE, Settings, normalize_brief
@@ -39,8 +43,10 @@ from .connectors import ALL as ALL_CONNECTORS
 from .connectors.base import Ctx
 from .engine import Engine
 from .llm import LLM
+from .llmpool import Router, box_for, retry_policy
 from .outreach import WRITER_SYSTEM, draft_for_lead, draft_pending
 from .report import render_html
+from .secretbox import hint as key_hint
 from .store import Store
 from .tools import goal_progress, planner_tools, worker_tools
 
@@ -691,16 +697,24 @@ def create_app(settings: Settings | None = None, store: Store | None = None) -> 
     @app.get("/api/settings", dependencies=U)
     def get_settings():
         eff = effective()
-        llm_ok = bool(settings.env.get("ANTHROPIC_API_KEY") or settings.env.get("ANTHROPIC_AUTH_TOKEN"))
+        env_ok = bool(settings.env.get("ANTHROPIC_API_KEY") or settings.env.get("ANTHROPIC_AUTH_TOKEN"))
+        profiles = Router(store).profiles()
+        llm_ok = any(p.usable for p in profiles) if profiles else env_ok
         return {"values": {k: getattr(eff, attr) for k, (attr, _) in EDITABLE.items()},
-                "overrides": store.get_settings(), "anthropic_configured": llm_ok,
+                "overrides": {k: v for k, v in store.get_settings().items() if k in EDITABLE},
+                "anthropic_configured": llm_ok, "env_key_configured": env_ok, "llm_profiles": len(profiles),
                 "fallbacks": os.environ.get("ZEALEAD_FALLBACKS", "default") != "off"}
 
     @app.put("/api/settings", dependencies=ADMIN)
     def put_settings(body: dict[str, Any]):
         bad = [k for k in body if k not in EDITABLE]
         if bad:
-            raise HTTPException(400, f"not editable here: {', '.join(bad)} (API keys belong in .env)")
+            raise HTTPException(400, f"not editable here: {', '.join(bad)} (API keys belong in .env or System → LLM)")
+        body = {k: (int(v) if isinstance(v, bool) else v) for k, v in body.items()}
+        ids = {str(r["id"]) for r in store.llm_profiles()}
+        for k in ("planner_profile", "worker_profile", "writer_profile"):
+            if body.get(k) not in (None, "") and str(body[k]) not in ids:
+                raise HTTPException(400, f"{k}: no such model profile")
         for k, v in body.items():
             kind = EDITABLE[k][1]
             if v not in (None, ""):
@@ -726,6 +740,13 @@ def create_app(settings: Settings | None = None, store: Store | None = None) -> 
     @app.get("/api/system/agents", dependencies=U)
     def agents():
         eff = effective()
+        router = Router(store)
+
+        def resolved(role, model, effort):
+            p = router.chain(role, model)[0][0]
+            return {"model": p.model or model, "effort": p.effort_for(effort) or "not sent",
+                    "profile": p.name, "format": p.format}
+
         env = Envelope()
         ptools = planner_tools(store, 0, env, {"dispatched": 0})
         wtools = worker_tools(Ctx(store, None, 0, None, 30, {}), env, {})
@@ -734,21 +755,21 @@ def create_app(settings: Settings | None = None, store: Store | None = None) -> 
             return [{"name": t.name, "description": t.description} for t in ts]
 
         return [
-            {"role": "decomposer", "title": "Goal decomposer", "model": eff.planner_model, "effort": "medium",
+            {"role": "decomposer", "title": "Goal decomposer", **resolved("decomposer", eff.planner_model, "medium"),
              "max_turns": 4, "description": "Turns a brief into countable lead goals and operator constraints.",
              "system": DECOMPOSER_SYSTEM, "tools": [{"name": "set_goals", "description": "Record the lead goals."},
                                                     {"name": "set_constraints",
                                                      "description": "Record allow/deny constraints."}]},
-            {"role": "planner", "title": "Planner", "model": eff.planner_model, "effort": eff.planner_effort,
+            {"role": "planner", "title": "Planner", **resolved("planner", eff.planner_model, eff.planner_effort),
              "max_turns": eff.planner_max_turns,
              "description": "Wakes on every graph change, judges goals and dispatches up to 4 search intents per round.",
              "system": PLANNER_SYSTEM, "tools": tl(ptools)},
-            {"role": "worker", "title": "Worker", "model": eff.worker_model, "effort": eff.worker_effort,
+            {"role": "worker", "title": "Worker", **resolved("worker", eff.worker_model, eff.worker_effort),
              "max_turns": eff.intent_max_turns, "count": eff.workers,
              "description": "Claims one intent, searches the platforms, reports verified leads and facts, then stops.",
              "system": WORKER_SYSTEM, "tools": tl(wtools) + [{"name": "(platform tools)",
                                                               "description": "Every enabled platform's search tools."}]},
-            {"role": "writer", "title": "Message writer", "model": eff.writer_model, "effort": eff.writer_effort,
+            {"role": "writer", "title": "Message writer", **resolved("writer", eff.writer_model, eff.writer_effort),
              "max_turns": 4,
              "description": ("Drafts a personalised public reply and direct message for each lead from that person's "
                              "own post" + (" as leads are found." if eff.auto_draft else " when you ask (auto-draft is off).")),
@@ -756,6 +777,243 @@ def create_app(settings: Settings | None = None, store: Store | None = None) -> 
                  "Save both drafts. Code checks length, that the product is named, that the only link is the "
                  "product URL, and that the messages aren't near-copies of another lead's.")}]},
         ]
+
+    # ------------------------------------------------------------ LLM profiles, pool, retry
+    def _mask_proxy(proxy: str) -> str:
+        from urllib.parse import urlsplit, urlunsplit
+        try:
+            u = urlsplit(proxy)
+        except ValueError:
+            return proxy
+        if u.password:
+            netloc = f"{u.username}:****@{u.hostname}" + (f":{u.port}" if u.port else "")
+            return urlunsplit((u.scheme, netloc, u.path, u.query, u.fragment))
+        return proxy
+
+    def _profile_out(row: dict) -> dict:
+        try:
+            retry = json.loads(row["retry"] or "{}")
+        except ValueError:
+            retry = {}
+        return {
+            "id": str(row["id"]), "name": row["name"], "format": row["format"], "model": row["model"],
+            "base_url": row["base_url"], "proxy": _mask_proxy(row["proxy"]), "api_key_hint": row["api_key_hint"],
+            "custom_headers_set": bool(row["custom_headers"]), "rate_per_second": row["rate_per_second"],
+            "rate_per_minute": row["rate_per_minute"], "context_window_k": row["context_window_k"],
+            "thinking_type": row["thinking_type"], "reasoning_effort": row["reasoning_effort"],
+            "priority": row["priority"], "pool_exclude": bool(row["pool_exclude"]), "streaming": bool(row["streaming"]),
+            "max_tokens": row["max_tokens"], "max_tokens_field": row["max_tokens_field"],
+            "session_header_key": row["session_header_key"], "user_agent": row["user_agent"],
+            "retry": PV.normalize_policy(retry, PV.PROFILE_LAYERS), "is_default": bool(row["is_default"]),
+        }
+
+    def _int_in(body: dict, k: str, lo: int, hi: int) -> int:
+        try:
+            v = int(body.get(k) or 0)
+        except (TypeError, ValueError):
+            raise HTTPException(400, f"{k} must be an integer") from None
+        if not lo <= v <= hi:
+            raise HTTPException(400, f"{k} must be between {lo} and {hi}")
+        return v
+
+    def _url_ok(v: str, schemes: tuple) -> bool:
+        from urllib.parse import urlsplit
+        try:
+            u = urlsplit(v)
+        except ValueError:
+            return False
+        return u.scheme in schemes and bool(u.hostname) and not any(c in v for c in " \r\n\t")
+
+    def _profile_draft(body: dict, existing: dict | None) -> tuple[PV.Profile, dict]:
+        """Validate a create/update body. Returns the runtime Profile and the DB fields to write."""
+        box = box_for(store)
+        fmt = str(body.get("format") or "anthropic")
+        if fmt not in PV.FORMATS:
+            raise HTTPException(400, f"format must be one of {', '.join(PV.FORMATS)}")
+        name = str(body.get("name") or "").strip()
+        model = str(body.get("model") or "").strip()
+        if not name or len(name) > 80:
+            raise HTTPException(400, "name is required (at most 80 characters)")
+        if not model or len(model) > 200 or any(c in model for c in "\r\n\t"):
+            raise HTTPException(400, "model is required (at most 200 characters)")
+        base_url = str(body.get("base_url") or "").strip().rstrip("/")
+        if base_url and not _url_ok(base_url, ("http", "https")):
+            raise HTTPException(400, "base URL must be an http(s) URL")
+        if fmt == "bedrock-gateway" and not base_url:
+            raise HTTPException(400, "the Bedrock gateway format needs the gateway base URL")
+        proxy = str(body.get("proxy") or "").strip()
+        if existing and proxy and proxy == _mask_proxy(existing["proxy"]):
+            proxy = existing["proxy"]
+        if proxy and not _url_ok(proxy, ("http", "https", "socks5", "socks5h")):
+            raise HTTPException(400, "proxy must be an http://, https://, socks5:// or socks5h:// URL")
+        thinking = str(body.get("thinking_type") or "")
+        if thinking not in PV.THINKING_TYPES:
+            raise HTTPException(400, "thinking_type must be '', disabled, enabled or adaptive")
+        effort = str(body.get("reasoning_effort") if body.get("reasoning_effort") is not None else "role")
+        if effort not in PV.EFFORTS:
+            raise HTTPException(400, "reasoning_effort must be role, '' or low / medium / high / xhigh / max")
+        mt_field = str(body.get("max_tokens_field") or "") if fmt == "openai" else ""
+        if mt_field not in ("", "max_completion_tokens"):
+            raise HTTPException(400, "max_tokens_field must be '' or max_completion_tokens")
+        sh = str(body.get("session_header_key") or "").strip()
+        if sh and (len(sh) > 64 or not all(c.isalnum() or c in "-_" for c in sh)):
+            raise HTTPException(400, "session header name may use letters, digits, - and _ only")
+        ua = str(body.get("user_agent") or "").strip()
+        if len(ua) > 200 or "\r" in ua or "\n" in ua:
+            raise HTTPException(400, "User-Agent must be one line of at most 200 characters")
+        try:
+            retry = PV.normalize_policy(body.get("retry") or {}, PV.PROFILE_LAYERS)
+        except ValueError as e:
+            raise HTTPException(400, f"retry: {e}") from None
+
+        # Secrets: write-only. Empty input keeps the stored value, except when the endpoint moved:
+        # a saved key is never sent to a host other than the one it was entered for.
+        new_key = str(body.get("api_key") or "").strip()
+        headers_text = str(body.get("custom_headers") or "")
+        old_base = PV.Profile(0, "", existing["format"], "", base_url=existing["base_url"]).base() if existing else ""
+        new_base = PV.Profile(0, "", fmt, "", base_url=base_url).base()
+        moved = bool(existing) and old_base != new_base
+        if moved and existing["api_key"] and not new_key:
+            raise HTTPException(400, "the base URL or format changed: re-enter the API key for the new endpoint")
+        sealed_key = box.seal(new_key) if new_key else (existing["api_key"] if existing else "")
+        key_plain = new_key or (box.open(existing["api_key"]) if existing and existing["api_key"] else "")
+        if fmt == "bedrock-gateway":
+            if body.get("clear_custom_headers"):
+                sealed_headers, headers = "", {}
+            elif headers_text.strip():
+                try:
+                    headers = PV.parse_headers(headers_text)
+                except ValueError as e:
+                    raise HTTPException(400, str(e)) from None
+                sealed_headers = box.seal(headers_text)
+            else:
+                if moved and existing and existing["custom_headers"]:
+                    raise HTTPException(400, "the base URL changed: re-enter the custom gateway headers")
+                sealed_headers = existing["custom_headers"] if existing else ""
+                headers = PV.parse_headers(box.open(sealed_headers)) if sealed_headers else {}
+        else:
+            sealed_headers, headers = "", {}
+        if fmt == "bedrock-gateway" and not key_plain:
+            raise HTTPException(400, "the Bedrock gateway format needs a bearer token")
+
+        fields = {
+            "name": name, "format": fmt, "model": model, "base_url": base_url, "proxy": proxy,
+            "api_key": sealed_key, "api_key_hint": key_hint(key_plain), "custom_headers": sealed_headers,
+            "rate_per_second": _int_in(body, "rate_per_second", 0, 1000),
+            "rate_per_minute": _int_in(body, "rate_per_minute", 0, 100000),
+            "context_window_k": _int_in(body, "context_window_k", 0, 1000),
+            "thinking_type": thinking, "reasoning_effort": effort,
+            "priority": _int_in(body, "priority", -1000, 1000), "pool_exclude": int(bool(body.get("pool_exclude"))),
+            "streaming": int(body.get("streaming", True) is not False), "max_tokens": _int_in(body, "max_tokens", 0, 1_000_000),
+            "max_tokens_field": mt_field, "session_header_key": sh, "user_agent": ua,
+            "retry": json.dumps(retry),
+        }
+        prof = PV.Profile(id=int(existing["id"]) if existing else -1, name=name, format=fmt, model=model, base_url=base_url,
+                          proxy=proxy, api_key=key_plain, custom_headers=headers,
+                          rate_per_second=fields["rate_per_second"], rate_per_minute=fields["rate_per_minute"],
+                          context_window_k=fields["context_window_k"], thinking_type=thinking, reasoning_effort=effort,
+                          streaming=bool(fields["streaming"]), max_tokens=fields["max_tokens"], max_tokens_field=mt_field,
+                          session_header_key=sh, user_agent=ua, retry=retry)
+        return prof, fields
+
+    def _existing(body: dict) -> dict | None:
+        pid = body.get("profile_id") or body.get("id")
+        if not pid:
+            return None
+        row = store.llm_profile(_int_or_none(pid) or 0)
+        if not row:
+            raise HTTPException(404, "no such model profile")
+        return row
+
+    @app.get("/api/llm/profiles", dependencies=U)
+    def llm_profiles():
+        return [_profile_out(r) for r in store.llm_profiles()]
+
+    @app.post("/api/llm/profiles", dependencies=ADMIN)
+    def save_llm_profile(body: dict[str, Any]):
+        existing = _existing({"id": body.get("id")})
+        _, fields = _profile_draft(body, existing)
+        pid = store.save_llm_profile(existing["id"] if existing else None, fields)
+        if not any(r["is_default"] for r in store.llm_profiles()):
+            store.activate_llm_profile(pid)        # the first profile becomes active, replacing the .env key
+        return {"id": str(pid)}
+
+    @app.delete("/api/llm/profiles/{pid}", dependencies=ADMIN)
+    def delete_llm_profile(pid: int):
+        row = store.llm_profile(pid)
+        if not row:
+            raise HTTPException(404, "no such model profile")
+        if row["is_default"] and len(store.llm_profiles()) > 1:
+            raise HTTPException(409, "cannot delete the active profile; activate another one first")
+        store.delete_llm_profile(pid)
+        for k in ("planner_profile", "worker_profile", "writer_profile"):
+            if store.get_settings().get(k) == str(pid):
+                store.set_setting(k, None)
+        return {"ok": True}
+
+    @app.post("/api/llm/profiles/{pid}/activate", dependencies=ADMIN)
+    def activate_llm_profile(pid: int):
+        if not store.llm_profile(pid):
+            raise HTTPException(404, "no such model profile")
+        store.activate_llm_profile(pid)
+        return {"ok": True}
+
+    def _probe_profile(body: dict) -> PV.Profile:
+        body = dict(body)
+        existing = _existing(body)
+        if not body.get("name"):
+            body["name"] = existing["name"] if existing else "connection test"
+        if not body.get("model"):
+            body["model"] = existing["model"] if existing else "probe"
+        if existing and "retry" not in body:
+            body["retry"] = {}
+        prof, _ = _profile_draft(body, existing)
+        return prof
+
+    @app.post("/api/llm/test", dependencies=ADMIN)
+    async def llm_test(body: dict[str, Any]):
+        try:
+            prof = _probe_profile(body)
+        except HTTPException as e:
+            return {"ok": False, "error": e.detail}
+        if not prof.usable:
+            return {"ok": False, "error": "no API key: enter one (only Ollama runs keyless)"}
+        return await PV.test_connection(prof)
+
+    @app.post("/api/llm/models", dependencies=ADMIN)
+    async def llm_models(body: dict[str, Any]):
+        try:
+            prof = _probe_profile(body)
+        except HTTPException as e:
+            return {"ok": False, "error": e.detail}
+        try:
+            return {"ok": True, "models": await PV.list_models(prof)}
+        except PV.ProviderError as e:
+            return {"ok": False, "error": str(e)}
+
+    @app.get("/api/llm/pool", dependencies=U)
+    def llm_pool():
+        return Router(store).pool_status()
+
+    @app.post("/api/llm/pool/reset", dependencies=ADMIN)
+    def llm_pool_reset(body: dict[str, Any] | None = None):
+        pid = _int_or_none((body or {}).get("id"))
+        store.clear_llm_health(pid)
+        return {"ok": True}
+
+    @app.get("/api/llm/retry", dependencies=U)
+    def llm_retry():
+        return retry_policy(store.get_settings())
+
+    @app.put("/api/llm/retry", dependencies=ADMIN)
+    def put_llm_retry(body: dict[str, Any]):
+        try:
+            policy = PV.normalize_policy(body)
+        except ValueError as e:
+            raise HTTPException(400, str(e)) from None
+        empty = all(not r["attempts"] and not r["interval_ms"] for r in policy.values())
+        store.set_setting("llm_retry", None if empty else json.dumps(policy))
+        return policy
 
     @app.get("/api/system/info", dependencies=U)
     def info():

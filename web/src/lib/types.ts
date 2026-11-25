@@ -348,7 +348,107 @@ export interface SettingsResp {
   values: Record<string, string | number>;
   overrides: Record<string, string>;
   anthropic_configured: boolean;
+  env_key_configured: boolean;
+  llm_profiles: number;
   fallbacks: boolean;
+}
+
+// ---------------------------------------------------------------- LLM profiles
+export type LLMFormat = "anthropic" | "openai" | "openai-responses" | "ollama" | "bedrock-gateway";
+
+/** attempts: 0 = built-in default, -1 = layer off, >0 = that count. interval_ms: 0 = layer's own backoff. */
+export interface LLMRetryRule {
+  attempts: number;
+  interval_ms: number;
+}
+export interface LLMRetryOverride {
+  connect: LLMRetryRule; // before a 200: transport errors, 408 / 429 / 5xx
+  empty: LLMRetryRule; // a 200 with no content (openai formats)
+  stream: LLMRetryRule; // the stream broke before any output was delivered
+}
+export interface LLMRetryPolicy extends LLMRetryOverride {
+  breaker: LLMRetryRule; // consecutive transient failures to trip; interval = fixed cooldown
+  intent: LLMRetryRule; // whole-intent reruns after a model error
+}
+
+export interface LLMProfile {
+  id: string;
+  name: string;
+  format: LLMFormat;
+  model: string;
+  base_url: string;
+  proxy: string; // password masked as ****
+  api_key_hint: string;
+  custom_headers_set: boolean;
+  rate_per_second: number;
+  rate_per_minute: number;
+  context_window_k: number;
+  thinking_type: string; // "" | disabled | enabled | adaptive
+  reasoning_effort: string; // role | "" | low … max
+  priority: number;
+  pool_exclude: boolean;
+  streaming: boolean;
+  max_tokens: number;
+  max_tokens_field: string;
+  session_header_key: string;
+  user_agent: string;
+  retry: LLMRetryOverride;
+  is_default: boolean;
+}
+
+export interface LLMProfileInput extends Omit<LLMProfile, "id" | "api_key_hint" | "custom_headers_set" | "is_default"> {
+  id?: string;
+  api_key: string;
+  custom_headers: string;
+  clear_custom_headers: boolean;
+}
+
+export interface LLMProbe {
+  format: LLMFormat;
+  model?: string;
+  base_url?: string;
+  api_key?: string;
+  proxy?: string;
+  thinking_type?: string;
+  reasoning_effort?: string;
+  profile_id?: string;
+  streaming?: boolean;
+  max_tokens?: number;
+  max_tokens_field?: string;
+  session_header_key?: string;
+  user_agent?: string;
+  custom_headers?: string;
+}
+
+export interface LLMTestResult {
+  ok: boolean;
+  latency_ms?: number;
+  model?: string;
+  reply?: string;
+  error?: string;
+}
+
+export interface LLMPoolMember {
+  profile_id: string;
+  name: string;
+  model: string;
+  format: LLMFormat;
+  active: boolean;
+  excluded: boolean;
+  usable: boolean;
+  priority: number;
+  state: "ok" | "degraded" | "tripped";
+  fails: number;
+  trips: number;
+  cooldown_secs: number;
+  last_error: string;
+}
+
+export interface LLMPoolStatus {
+  enabled: boolean;
+  bind_fallback: boolean;
+  soft_trip: number;
+  chain: LLMPoolMember[];
 }
 
 export interface PlatformInfo {
@@ -365,6 +465,8 @@ export interface AgentInfo {
   title: string;
   model: string;
   effort: string;
+  profile?: string;
+  format?: string;
   max_turns: number;
   count?: number;
   description: string;
