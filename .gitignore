@@ -1,0 +1,24 @@
+.env
+*.db
+*.db-wal
+*.db-shm
+*.token
+__pycache__/
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+leads-report.html
+*.csv
+
+# console build output and deps
+leadscout/webui/
+web/node_modules/
+web/.next/
+web/out/
+web/next-env.d.ts
+# local Docker data and signing keys
+data/
+keys/

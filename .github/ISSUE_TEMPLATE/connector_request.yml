@@ -1,0 +1,31 @@
+name: Connector request
+description: Ask for a new platform to search
+labels: [connector]
+body:
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      placeholder: e.g. Discourse forums, Mastodon, YouTube comments
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why buyers post there
+      description: What kind of buying signals show up on this platform?
+    validations:
+      required: true
+  - type: textarea
+    id: api
+    attributes:
+      label: Official API or search access
+      description: Link the official API docs and say whether it needs a key or a paid tier. leadscout only uses official APIs or search engines. It does not scrape platforms whose terms forbid it.
+    validations:
+      required: true
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Contribution
+      options:
+        - label: I can write this connector (see docs/connectors.md)

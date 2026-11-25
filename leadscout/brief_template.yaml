@@ -1,0 +1,40 @@
+# Campaign brief: the only input leadscout needs.
+name: Acme Invoicing — Q1 outreach
+product: Acme Invoicing
+url: https://example.com
+description: >
+  Invoicing and payment reminders for freelancers and small agencies. Sends
+  invoices, chases late payments automatically, and syncs with Stripe and
+  QuickBooks.
+ideal_customer: >
+  Freelancers, consultants and agencies with 1-30 people who bill clients
+  monthly, mostly in the US, UK and EU.
+pain_points:
+  - clients pay late and chasing them is awkward
+  - current invoicing tool is too expensive for a small team
+  - manual invoicing in spreadsheets or Word
+competitors:
+  - FreshBooks
+  - Bonsai
+  - Wave
+  - Harvest
+keywords:
+  - invoicing software
+  - late payments
+  - payment reminders
+  - chasing invoices
+# Leave empty to use every platform that has credentials.
+platforms: []
+exclude_platforms: []
+recency_days: 45
+regions_languages: English
+objective: Find 40 potential customers with warm or hot buying intent, at least 10 of them hot.
+target_leads: 40
+notes: >
+  B2B only: skip students and people asking for personal budgeting tools.
+  Skip posts by other invoicing vendors.
+# How the personalised messages for each lead should sound (all optional).
+outreach:
+  sender: Sam, founder of Acme Invoicing   # who signs the messages
+  tone: friendly, plain, no hype
+  offer: a free 30-day trial               # what you can offer, if anything

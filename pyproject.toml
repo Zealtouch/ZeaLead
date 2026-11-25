@@ -1,0 +1,54 @@
+[project]
+name = "leadscout"
+version = "0.3.0"
+description = "Autonomous multi-agent lead finder: reads Reddit, Hacker News, X, LinkedIn and review sites to find people who need your product, with verified evidence."
+readme = "README.md"
+license = "AGPL-3.0-or-later"
+license-files = ["LICENSE", "NOTICE"]
+requires-python = ">=3.10"
+keywords = ["lead-generation", "llm", "agents", "claude", "marketing", "social-listening", "osint"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Topic :: Office/Business",
+]
+dependencies = [
+    "anthropic>=0.75",
+    "httpx>=0.27",
+    "pyyaml>=6.0",
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[project.scripts]
+leadscout = "leadscout.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/OWNER/leadscout"
+Issues = "https://github.com/OWNER/leadscout/issues"
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["leadscout*"]
+
+[tool.setuptools.package-data]
+leadscout = ["webui/**/*", "brief_template.yaml"]
+
+[tool.ruff]
+line-length = 130
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "I"]
+ignore = ["E501", "B008", "B023"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

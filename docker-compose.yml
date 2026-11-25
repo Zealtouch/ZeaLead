@@ -1,0 +1,40 @@
+# ./start.sh                        first run: creates .env, builds, starts → http://localhost:8790
+# ./reset-password.sh <username>    set a new password for a console user
+# docker compose logs -f leadscout  follow the server log
+services:
+  leadscout:
+    build: .
+    image: leadscout:latest
+    container_name: leadscout
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    # Pinned here so values in .env (meant for running without Docker) can't move the
+    # database or the listener inside the container.
+    environment:
+      LEADSCOUT_DB: /app/data/leadscout.db
+      LEADSCOUT_KEYS_DIR: /app/keys
+      LEADSCOUT_BIND_ADDR: 0.0.0.0
+      LEADSCOUT_PORT: "8790"
+    ports:
+      # Loopback only by default. To reach it from other machines, put a TLS reverse proxy
+      # in front, or set LEADSCOUT_PUBLISH_ADDR=0.0.0.0 in .env if you accept the risk.
+      - "${LEADSCOUT_PUBLISH_ADDR:-127.0.0.1}:${LEADSCOUT_PUBLISH_PORT:-8790}:8790"
+    volumes:
+      - leadscout-data:/app/data # SQLite: tasks, leads, sessions, users
+      - leadscout-keys:/app/keys # session signing key
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8790/api/health')"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+volumes:
+  leadscout-data:
+  leadscout-keys:
