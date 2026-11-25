@@ -959,9 +959,45 @@ function ProfileSheet({
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+function EnvironmentCard({ settings }: { settings: SettingsResp | null }) {
+  const ok = settings?.env_key_configured;
+  return (
+    <Card className="col-span-full gap-0 border-dashed py-4">
+      <CardContent className="grid gap-2 px-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <StarIcon className="size-4 fill-amber-400 text-amber-400" />
+          <span className="font-medium text-sm">{t("Environment key (ANTHROPIC_API_KEY)")}</span>
+          <Badge variant="outline" className="uppercase" lang="en">
+            anthropic
+          </Badge>
+          <Badge
+            variant="outline"
+            className={cn(
+              "ml-auto",
+              ok ? "border-emerald-500/50 text-emerald-600 dark:text-emerald-400" : "border-destructive/50 text-destructive",
+            )}
+          >
+            {ok ? t("Configured") : t("Missing")}
+          </Badge>
+        </div>
+        <p className="pl-6 text-muted-foreground text-xs">
+          {t(
+            "No model profiles yet, so every agent uses the Anthropic key from .env with the per-role model names on the Roles tab. Create a profile to use OpenAI, an OpenAI-compatible gateway, Ollama, a Bedrock gateway or another Anthropic key; the first profile becomes active.",
+          )}
+          {settings?.fallbacks ? ` ${t("Server-side fallbacks are on (ZEALEAD_FALLBACKS).")}` : ""}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function LLMPage() {
+  const user = useCurrentUser();
+  const canEdit = user?.role === "admin";
   const [profiles, setProfiles] = React.useState<LLMProfile[]>([]);
+  const [loaded, setLoaded] = React.useState(false);
   const [pool, setPool] = React.useState<LLMPoolStatus | null>(null);
+  const [settings, setSettings] = React.useState<SettingsResp | null>(null);
   const [poolOpen, setPoolOpen] = React.useState(false);
   // The drawer's open flag and its content are stored separately: editing stays put on close, otherwise during the closing animation the title would flash
   // from "Edit X" to "New". editing = null means create.
@@ -980,14 +1016,24 @@ export default function LLMPage() {
     }
   }, []);
 
-  const load = React.useCallback(async () => {
+  const loadSettings = React.useCallback(async () => {
     try {
-      setProfiles(await api.llmProfiles());
+      setSettings(await api.settings());
     } catch {
       /* ignore */
     }
-    await loadPool();
-  }, [loadPool]);
+  }, []);
+
+  const load = React.useCallback(async () => {
+    try {
+      setProfiles(await api.llmProfiles());
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setLoaded(true);
+    }
+    await Promise.all([loadPool(), loadSettings()]);
+  }, [loadPool, loadSettings]);
 
   React.useEffect(() => {
     void load();
@@ -1011,10 +1057,11 @@ export default function LLMPage() {
   }
 
   async function remove(p: LLMProfile) {
-    if (p.is_default) {
-      toast.error(t("Cannot delete the active profile"));
+    if (p.is_default && profiles.length > 1) {
+      toast.error(t("Cannot delete the active profile; activate another one first"));
       return;
     }
+    if (!window.confirm(t("Delete the model profile “{name}”? Its encrypted key is deleted with it.", { name: p.name }))) return;
     try {
       await api.deleteLLMProfile(p.id);
       toast.success(t("Deleted: {name}", { name: p.name }));
@@ -1025,41 +1072,56 @@ export default function LLMPage() {
   }
 
   const poolOn = pool?.enabled ?? false;
+  const noUsable = loaded && settings && !settings.anthropic_configured;
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="font-semibold text-xl tracking-tight">LLM</h1>
-          <p className="text-muted-foreground text-sm">
-            {t(
-              "Format / model / rate-limit settings shared by all agents. Click a card to edit it; the starred card is the active profile.",
+      <PageHeader
+        title={t("LLM")}
+        description={t(
+          "Model profiles shared by every agent: format, endpoint, key, limits and thinking. Click a card to edit it; the starred card is the active profile.",
+        )}
+        actions={
+          <>
+            <Button size="sm" variant="outline" onClick={() => setPoolOpen(true)}>
+              <ZapIcon /> {t("Pool settings")}
+              {poolOn && (
+                <Badge variant="outline" className="ml-1 border-emerald-500/50 text-emerald-600 dark:text-emerald-400">
+                  {t("On")}
+                </Badge>
+              )}
+            </Button>
+            {canEdit && (
+              <Button size="sm" variant="outline" onClick={() => openEditor(null)}>
+                <PlusIcon /> {t("Create")}
+              </Button>
             )}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" onClick={() => setPoolOpen(true)}>
-            <ZapIcon /> {t("Pool settings")}
-            {poolOn && (
-              <Badge variant="outline" className="ml-1 border-emerald-500/50 text-emerald-600 dark:text-emerald-400">
-                {t("On")}
-              </Badge>
-            )}
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => openEditor(null)}>
-            <PlusIcon /> {t("Create")}
-          </Button>
-        </div>
-      </div>
+          </>
+        }
+      />
+
+      {noUsable && (
+        <Alert variant="destructive">
+          <PlugZapIcon />
+          <AlertTitle>{t("No usable model")}</AlertTitle>
+          <AlertDescription>
+            {profiles.length
+              ? t("No profile has an API key. Edit a profile and add its key (only Ollama runs keyless).")
+              : t("Add ANTHROPIC_API_KEY to .env and restart, or create a model profile here.")}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Tabs defaultValue="profiles" className="flex-1">
         <TabsList>
           <TabsTrigger value="profiles">{t("Model profiles")}</TabsTrigger>
+          <TabsTrigger value="roles">{t("Roles")}</TabsTrigger>
           <TabsTrigger value="retry">{t("Retry & backoff")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profiles" className="mt-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {loaded && profiles.length === 0 && <EnvironmentCard settings={settings} />}
             {profiles.map((p) => {
               const h = healthOf(p, health.get(p.id));
               return (
@@ -1103,18 +1165,16 @@ export default function LLMPage() {
                     </div>
 
                     <div className="flex flex-wrap gap-x-3 gap-y-0.5 pl-6 text-muted-foreground text-xs">
-                      {p.api_key_hint && <span>{p.api_key_hint}</span>}
-                      <span>
-                        {t("{rps}/s · {rpm}/min", { rps: p.rate_per_second, rpm: p.rate_per_minute })}
-                      </span>
+                      {p.api_key_hint && <span className="font-mono">{p.api_key_hint}</span>}
+                      <span>{t("{rps}/s · {rpm}/min", { rps: p.rate_per_second, rpm: p.rate_per_minute })}</span>
+                      {p.base_url && <span className="truncate">{p.base_url}</span>}
                       {p.proxy && <span className="truncate">{t("Proxy {proxy}", { proxy: p.proxy })}</span>}
-                      {p.reasoning_effort && (
-                        <span>
-                          {t("Thinking {effort}", {
-                            effort: p.reasoning_effort === "off" ? t("off") : p.reasoning_effort,
-                          })}
-                        </span>
-                      )}
+                      <span>
+                        {t("Effort {effort}", {
+                          effort: p.reasoning_effort === "role" ? t("per role") : p.reasoning_effort || t("not sent"),
+                        })}
+                      </span>
+                      {!p.streaming && <span>{t("non-streaming")}</span>}
                       {/* The two pool-related fields only matter when the pool is on; when it is off they take no space */}
                       {poolOn &&
                         !p.is_default &&
@@ -1125,50 +1185,57 @@ export default function LLMPage() {
                         ))}
                     </div>
 
-                    <div className="mt-1 flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-1"
-                        disabled={p.is_default}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void activate(p.id, p.name);
-                        }}
-                      >
-                        {p.is_default ? t("Active") : t("Set as active")}
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        aria-label={t("Delete profile")}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void remove(p);
-                        }}
-                      >
-                        <Trash2Icon className="text-destructive" />
-                      </Button>
-                    </div>
+                    {canEdit && (
+                      <div className="mt-1 flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1"
+                          disabled={p.is_default}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void activate(p.id, p.name);
+                          }}
+                        >
+                          {p.is_default ? t("Active") : t("Set as active")}
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          aria-label={t("Delete profile")}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void remove(p);
+                          }}
+                        >
+                          <Trash2Icon className="text-destructive" />
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               );
             })}
-            {profiles.length === 0 && (
-              <div className="col-span-full rounded-lg border border-dashed p-10 text-center text-muted-foreground text-sm">
-                {t('No model profiles yet — click "Create" in the top right to add the first one.')}
-              </div>
-            )}
           </div>
         </TabsContent>
 
+        <TabsContent value="roles" className="mt-4">
+          {settings && <RolesPanel settings={settings} profiles={profiles} onSaved={() => void load()} />}
+        </TabsContent>
+
         <TabsContent value="retry" className="mt-4">
-          <RetryPolicyPanel />
+          <RetryPolicyPanel canEdit={canEdit} />
         </TabsContent>
       </Tabs>
 
-      <ProfileSheet profile={editing} open={editOpen} onOpenChange={setEditOpen} onSaved={() => void load()} />
-      <PoolSheet open={poolOpen} onOpenChange={setPoolOpen} pool={pool} onReload={loadPool} />
+      <ProfileSheet
+        profile={editing}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onSaved={() => void load()}
+        canEdit={canEdit}
+      />
+      <PoolSheet open={poolOpen} onOpenChange={setPoolOpen} pool={pool} onReload={loadPool} canEdit={canEdit} />
     </div>
   );
 }

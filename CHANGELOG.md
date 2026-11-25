@@ -7,6 +7,19 @@ All notable changes to this project are listed here. The format follows
 ## [Unreleased]
 
 ### Added
+- Any LLM, configured the way ARTEX does it (System → LLM):
+  - Model profiles in five formats: Anthropic, OpenAI Chat Completions, OpenAI Responses API,
+    Ollama and Bedrock-compatible gateways. Each profile sets model (loadable from the API), base
+    URL, proxy, API key, rate limits, context window, output cap and field name, thinking switch,
+    reasoning effort, streaming, session-id header, User-Agent and gateway headers, with a
+    connection test.
+  - Per-role profile pins for the planner, workers and message writer.
+  - A failover pool with priorities, load sharing, context-window filtering and a persisted
+    breaker (1 → 5 → 30 min cooldowns), with recover buttons.
+  - Five retry layers (connect, empty response, stream replay, breaker, intent rerun), set
+    globally or per profile.
+  - Keys are encrypted at rest under `keys/llm.key`, write-only in the API, and never sent to a
+    host other than the one they were entered for.
 - Personal messages: a message writer drafts a public reply and a direct message for every lead
   from that person's own post, using the brief's new `outreach` section (sender, tone, offer).
   Drafts are refused if they don't name the product, link anywhere but the product URL, or nearly

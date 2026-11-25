@@ -13,7 +13,7 @@ import { api } from "@/lib/api";
 
 const ICON: Record<string, React.ElementType> = { decomposer: Target, planner: Compass, worker: Radio, writer: PenLine };
 
-// Agent: the three roles, their system prompts, tools and effective model settings.
+// Agent: the roles, their system prompts, tools and the model profile each one resolves to.
 export default function AgentsPage() {
   const { data } = usePoll(() => api.agents(), []);
   if (!data) return <Loading className="min-h-96" />;
@@ -37,6 +37,11 @@ export default function AgentsPage() {
                 <Badge variant="outline" className="font-mono">
                   {a.model}
                 </Badge>
+                {a.profile && (
+                  <Badge variant="secondary" title={a.format}>
+                    {a.profile}
+                  </Badge>
+                )}
                 <Badge variant="secondary">{t("effort {e}", { e: a.effort })}</Badge>
                 <Badge variant="secondary">{t("{n} turns max", { n: a.max_turns })}</Badge>
                 {a.count !== undefined && <Badge variant="secondary">{t("×{n} in parallel", { n: a.count })}</Badge>}

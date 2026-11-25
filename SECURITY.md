@@ -19,8 +19,9 @@ These are the issues we most want to hear about:
 - **Console problems:** bypassing sign-in or the admin role, forging or replaying session
   tokens, re-running first-run setup once an admin exists, XSS (the console must never render
   untrusted text as HTML), CSV formula injection, or CSRF.
-- **Secrets leaking.** API keys should never show up in the console, the database, logs or
-  reports.
+- **Secrets leaking.** API keys should never show up in the console, logs or reports, or in the
+  database unencrypted, and a saved key must never be sent to a host other than the one it was
+  entered for.
 - **Connectors sending data somewhere other than the platform they serve.**
 
 ## Running it safely
@@ -38,6 +39,13 @@ These are the issues we most want to hear about:
 - The Content Security Policy allows inline scripts and styles because the statically exported
   console needs them. Everything else is limited to the same origin, and collected text is only
   ever rendered as text or sanitized Markdown, never as HTML.
-- API keys belong in `.env` only. The console can't read or change them.
+- API keys: the environment key lives in `.env`, which the console can't read or change. Keys
+  entered for model profiles (System → LLM, admins only) are write-only: stored AES-256-GCM
+  encrypted under `keys/llm.key` (mode 0600, next to `jwt.key`), returned only as a masked hint,
+  and kept bound to their endpoint: changing a profile's base URL or format requires entering the
+  key again. Proxy passwords are masked in the API. Back up the keys directory with the database;
+  without `llm.key`, saved keys can't be decrypted and must be entered again.
+- "Test connection" and "load models" make outbound requests to the URL an admin enters. Only
+  admins can call them.
 - The lead database holds personal data: public handles, profile links and quotes. Protect
   it, and delete campaigns once you no longer need them.

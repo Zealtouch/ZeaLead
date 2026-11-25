@@ -34,7 +34,10 @@ ZeaLead explores public conversations for people who need your product.
 | `store.py` | SQLite (WAL mode): companies, users, campaigns, nodes, edges, sources, anchors, captures, leads, evidence, todos, activity, runs and their messages, tool calls, usage, settings |
 | `agents.py` | Decomposer, planner and worker prompts; `render_situation` builds the planner's view of the graph |
 | `tools.py` | Planner tools (`add_intent`, `prove_goal`, `todo_write`, …) and worker tools (`report_lead`, `record_fact`, …), with their gates |
-| `llm.py` | Manual tool loop over the Messages API: parallel tool calls, refusal and `pause_turn` handling, a wrap-up turn, the token budget; records each agent run's transcript, tool calls and model calls |
+| `llm.py` | Manual tool loop: parallel tool calls, refusal and `pause_turn` handling, a wrap-up turn, the token budget; each model call goes through the role's profile chain; records each agent run's transcript, tool calls and model calls |
+| `providers.py` | One call to any model: Anthropic (SDK), OpenAI Chat Completions, OpenAI Responses, Ollama and Bedrock gateways, converted to and from the Anthropic block shape; connect / empty / stream retries; rate limits; model list and connection test |
+| `llmpool.py` | Model profiles from the database, per-role pins, the failover chain and the persisted breaker |
+| `secretbox.py` | AES-GCM encryption of profile keys under `keys/llm.key` |
 | `engine.py` | Runs the planner loop and worker pool for one campaign; heartbeat, stall and stagnation stops |
 | `boundary.py` | Nonce envelope for untrusted text |
 | `governor.py` | Per-host pacing and backoff; a shared HTTP client |
@@ -116,6 +119,30 @@ clipped), every tool call to `tool_calls` with its input, output and duration, a
 response to `llm_usage` with tokens, stop reason and latency. The Sessions tab polls a run for
 messages after the last one it has, so a running session streams into the page. When a task
 starts or stops, runs left `running` by a crash are closed.
+
+### Models
+
+The agent loop speaks the Anthropic Messages shape: a system prompt, messages made of `text`,
+`tool_use` and `tool_result` blocks, and tools with an `input_schema`. `providers.py` converts
+that to each wire format (Chat Completions `tool_calls` and `tool` messages, Responses
+`function_call` and `function_call_output` items, Bedrock InvokeModel bodies) and converts the
+reply back, so the loop, the transcripts and the gates don't care which model answered, and the
+pool can switch provider in the middle of a run. Replies are buffered until complete, which makes
+replaying a broken stream safe.
+
+For every model call, `llmpool.Router` builds the chain for the role: the pinned profile, or the
+active one followed (pool on) by the other usable profiles by priority, with equal priorities
+rotated and profiles in cooldown or with too small a context window left out. A call is retried on
+the same profile first (connect, empty response, stream), then the chain moves on for failures
+that say something about the profile (transport, 401–404, 408, 429, 5xx) but not for request
+errors (400, 413, 422), which would fail everywhere. The breaker counts transient failures (trip
+after 3 in a row by default) and trips at once on 401, 402, 403 or 404; its state is in the
+`llm_health` table, so a restart doesn't forget it. A worker whose model call still fails is rerun
+from scratch (the intent layer). Settings are read on every call, so profile edits, pins and the
+retry policy apply to running tasks.
+
+Without profiles the chain is one implicit profile: `ANTHROPIC_API_KEY` with the per-role model
+names, which is how earlier versions behaved.
 
 ### Accounts
 

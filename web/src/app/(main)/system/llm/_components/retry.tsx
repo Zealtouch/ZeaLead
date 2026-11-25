@@ -75,7 +75,7 @@ export const RETRY_LAYERS = {
     offHint: t("-1 = hand the empty response through as-is"),
   },
   stream: {
-    title: t("Same-provider safe-window retry"),
+    title: t("Same-profile safe-window retry"),
     where: t("Same profile · before any output is delivered"),
     trigger: t("Trouble only after the stream is established (a 200 received): mid-stream disconnects, provider overloaded, in-stream 429 / 5xx error events — while not a single token has been handed to the caller yet."),
     skips: t("Quota exhausted (402), a dead key (401 / 403) and a missing model (404) go straight to the pool to switch profiles; request errors (400 / 413 / 422) are never retried."),

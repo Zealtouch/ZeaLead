@@ -35,9 +35,10 @@ git clone https://github.com/Zealtouch/ZeaLead && cd ZeaLead
 ./start.sh                 # creates .env, builds the image, starts the console
 ```
 
-Open <http://localhost:8790>. The first visit asks you to create the admin account. Then add your
-`ANTHROPIC_API_KEY` (and any platform keys you have) to `.env`, run `docker compose up -d`, and
-click **New task**.
+Open <http://localhost:8790>. The first visit asks you to create the admin account. Then either
+add your `ANTHROPIC_API_KEY` to `.env` and run `docker compose up -d`, or add a model profile
+under **System → LLM** (Anthropic, OpenAI, any OpenAI-compatible gateway, Ollama or a Bedrock
+gateway). Add any platform keys you have to `.env`, then click **New task**.
 
 | Command | What it does |
 |---|---|
@@ -123,9 +124,9 @@ company switcher, **Functions** for the work and **System** for configuration.
 - **Dashboard**: leads per day, where leads come from, top communities, token spend.
 - **Communities**: the subreddits, forums and searches where buyers were found, across tasks.
 - **Companies**: group tasks and leads by product or client; the switcher narrows every page.
-- **LLM**, **Agent**, **System Settings**: models and effort per role, each agent's prompt and
-  tools, run limits and request pacing. Changes apply to tasks started afterwards. API keys stay
-  in `.env`: the console can't read or change them.
+- **LLM**: model profiles for any provider, the failover pool, per-role pins and the retry
+  policy (see [Models](#models)). **Agent**: each role's prompt, tools and the profile it resolves
+  to. **System Settings**: run limits and request pacing.
 - **Users** (admins): add members or admins, change roles, reset passwords. **Logs**: the activity
   stream of every task.
 
@@ -191,7 +192,33 @@ offer. Set who signs, the tone and the offer in the brief's `outreach` section. 
 draft that doesn't name the product, links anywhere but your product URL, or is a near-copy of a
 message already written for another lead, so everyone gets a different message. Drafts appear as
 leads are found; edit them, rewrite them with an instruction ("shorter, more formal"), or turn
-off auto-drafting on the LLM page. ZeaLead never sends anything: you review and post.
+off auto-drafting on the LLM page's Roles tab. ZeaLead never sends anything: you review and post.
+
+## Models
+
+ZeaLead runs on any LLM you configure under **System → LLM**, with the same options as ARTEX:
+
+- **Model profiles** in five formats: Anthropic, OpenAI Chat Completions, OpenAI Responses API,
+  Ollama (local, keyless) and Bedrock-compatible gateways (bearer token, InvokeModel). Each has its
+  model (with a model list loaded from the API), base URL, proxy (http, https or socks5), API key,
+  per-second and per-minute rate limits, context window, output cap and its field name, thinking
+  switch, reasoning effort, streaming on or off, a session-id header for sticky routing or prompt
+  caching, a custom User-Agent, and static gateway headers. **Test connection** sends a real
+  request with those settings and shows the reply.
+- **Roles**: the planner, workers and message writer use the active (starred) profile, or each
+  can be pinned to its own profile, for example a strong model for planning and a cheap one for
+  messages. Effort is set per role; a profile can override it.
+- **Pool and failover**: when on, a role whose profile fails (no balance, dead key, rate limit,
+  outage) moves to the next profile by priority; equal priorities share the load, and profiles
+  whose context window can't hold the request are skipped. A breaker takes a failing profile out
+  for 1, then 5, then 30 minutes and shows its state on the card.
+- **Retry and backoff** in five layers (connect, empty response, same-profile stream replay, pool
+  breaker, intent rerun), each with its own attempts and interval, globally or per profile.
+
+Keys you enter are write-only: they are stored AES-GCM encrypted under `keys/llm.key`, shown only
+as a masked hint, and never sent to a different host (changing a profile's base URL requires
+re-entering its key). With no profiles, ZeaLead uses `ANTHROPIC_API_KEY` from `.env` and the model
+names on the Roles tab. Tool calling is required, so pick models that support it.
 
 ## Platforms
 
@@ -223,9 +250,9 @@ add a platform, see [docs/connectors.md](docs/connectors.md).
 ## Configuration
 
 Settings come from `.env` (see [.env.example](.env.example)); models, effort and limits can be
-overridden from the console.
-Both agents default to `claude-opus-5-5`, with the planner at `high` effort and workers at
-`medium`. A typical campaign of 20–40 intents uses 1–3M tokens. `ZEALEAD_BUDGET_TOKENS` caps
+overridden from the console, and model profiles live under System → LLM.
+Without profiles, every role defaults to `claude-opus-5-5` through `ANTHROPIC_API_KEY`, with the
+planner at `high` effort, workers at `medium` and the message writer at `low`. A typical campaign of 20–40 intents uses 1–3M tokens. `ZEALEAD_BUDGET_TOKENS` caps
 it, and the task's Overview and the LLM Recording page show the spend.
 
 ## Development
